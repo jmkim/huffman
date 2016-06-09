@@ -21,4 +21,4 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_executable(demo ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
 # Link the executable to the library
-target_link_libraries(demo LINK_PUBLIC libhuffman)
+target_link_libraries(demo LINK_PUBLIC huffman)

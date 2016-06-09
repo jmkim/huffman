@@ -18,8 +18,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Create a library
-add_library(libheap ${PROJECT_SOURCE_DIR}/include/heap.cpp)
-add_library(libhuffman ${PROJECT_SOURCE_DIR}/lib/huffman.cpp)
+add_library(huffman ${PROJECT_SOURCE_DIR}/lib/huffman.cpp)
 
 # Make sure the compiler can find include files for our library
-target_include_directories(libhuffman PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(huffman PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
