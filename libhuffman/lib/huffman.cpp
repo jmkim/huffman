@@ -110,34 +110,42 @@ Huffman
 void
 Huffman
 ::PrintHuffmanTree(FILE * f)
+{ PrintHuffmanTree(f, root_, 0); }
+
+void
+Huffman
+::PrintHuffmanTree(FILE * f, const Run * node, const SizeType & depth)
 {
-    PreOrderTraverse(root_, 0,
-    [&] (Run * node, const int & depth)
+    for(int i = 0; i < depth; ++i)
+        fprintf(f, " ");
+    if(node == nullptr)
+        fprintf(f, "null\n");
+    else
     {
-        for(int i = 0; i < depth; ++i)
-            fprintf(f, " ");
-        if(node == nullptr)
-            fprintf(f, "null\n");
-        else
-        {
-            fprintf(f, "%02x:%d:%d:%d %d\n"
-                        , node->symbol
-                        , node->run_len
-                        , node->freq
-                        , 0
-                        , 0);
-        }
+        fprintf(f, "%02x:%d:%d:%d %d\n"
+                    , node->symbol
+                    , node->run_len
+                    , node->freq
+                    , node->codeword 
+                    , node->codeword_len);
+
+        PrintHuffmanTree(f, node->left,  depth + 1);
+        PrintHuffmanTree(f, node->right, depth + 1);
     }
-    );
 }
 
 void
 Huffman
-::PreOrderTraverse(Run * node, const int & depth, std::function<void(Run *, const int &)> callback)
+::AssignCodeword(Run * node, const CodewordType & codeword, const SizeType & codeword_len) 
 {
-    callback(node, depth);
-    if(node == nullptr) return;
-
-    PreOrderTraverse(node->left,  depth + 1, callback);
-    PreOrderTraverse(node->right, depth + 1, callback);
+    if(node->left == nullptr && node->right == nullptr)
+    {
+        node->codeword      = codeword;
+        node->codeword_len  = codeword_len;
+    }
+    else
+    {
+        AssignCodeword(node->left,  (codeword << 1) + 0, codeword_len + 1);
+        AssignCodeword(node->right, (codeword << 1) + 1, codeword_len + 1);
+    }
 }
