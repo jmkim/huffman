@@ -54,8 +54,8 @@ public:
         , freq          (run.freq)
         , left          (run.left)
         , right         (run.right)
-        , codeword      (0)
-        , codeword_len  (0)
+        , codeword      (run.codeword)
+        , codeword_len  (run.codeword_len)
         { }
 
         Run(Run * left, Run * right)
