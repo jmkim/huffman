@@ -29,6 +29,8 @@ Huffman
         while(! f.eof())
         {
             f.read(&raw, sizeof(raw));
+            if(f.eof()) break;
+
             next_symbol = (SymbolType)raw;
 
             if(symbol == next_symbol)
