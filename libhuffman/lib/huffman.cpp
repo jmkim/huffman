@@ -156,3 +156,23 @@ void
 Huffman
 ::AssignCodeword(void)
 { AssignCodeword(root_, 0, 0); }
+void
+Huffman
+::CreateRunList(RunType * node)
+{
+    if(node->left == nullptr && node->right == nullptr)
+    {
+        if(list_.at(node->symbol) == nullptr)
+            list_.at(node->symbol) = node;
+        else
+        {
+            node->next = list_.at(node->symbol);
+            list_.at(node->symbol) = node;
+        }
+    }
+    else
+    {
+        CreateRunList(node->left);
+        CreateRunList(node->right);
+    }
+}
