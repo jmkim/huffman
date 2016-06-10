@@ -34,8 +34,8 @@ main(const int argc, const char * argv[])
     huffman.CollectRuns(f);
     huffman.PrintAllRuns(stdout);
     huffman.CreateHuffmanTree();
-    huffman.PrintHuffmanTree(stdout);
     huffman.AssignCodeword();
+    huffman.PrintHuffmanTree(stdout);
 
     f.close();
 

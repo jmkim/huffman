@@ -149,3 +149,8 @@ Huffman
         AssignCodeword(node->right, (codeword << 1) + 1, codeword_len + 1);
     }
 }
+
+void
+Huffman
+::AssignCodeword(void)
+{ AssignCodeword(root_, 0, 0); }

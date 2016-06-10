@@ -12,59 +12,73 @@ class Huffman
 public:
     typedef unsigned char   SymbolType;
     typedef size_t          SizeType;
+    typedef unsigned int    CodewordType;
 
     typedef std::pair<SymbolType, SizeType> MetaSymbolType;
 
     struct Run
     {
-        SymbolType          symbol;
-        SizeType            run_len;
-        SizeType            freq;
+        SymbolType      symbol;
+        SizeType        run_len;
+        SizeType        freq;
 
-        Run *               left;
-        Run *               right;
+        Run *           left;
+        Run *           right;
+
+        CodewordType    codeword;
+        SizeType        codeword_len;
 
         Run(const SymbolType & symbol, const SizeType & run_len, const SizeType & freq = 0)
-        : symbol    (symbol)
-        , run_len   (run_len)
-        , freq      (freq)
-        , left      (nullptr)
-        , right     (nullptr)
+        : symbol        (symbol)
+        , run_len       (run_len)
+        , freq          (freq)
+        , left          (nullptr)
+        , right         (nullptr)
+        , codeword      (0)
+        , codeword_len  (0)
         { }
 
         Run(const MetaSymbolType & meta_symbol, const SizeType & freq = 0)
-        : symbol    (meta_symbol.first)
-        , run_len   (meta_symbol.second)
-        , freq      (freq)
-        , left      (nullptr)
-        , right     (nullptr)
+        : symbol        (meta_symbol.first)
+        , run_len       (meta_symbol.second)
+        , freq          (freq)
+        , left          (nullptr)
+        , right         (nullptr)
+        , codeword      (0)
+        , codeword_len  (0)
         { }
 
         Run(const Run & run)
-        : symbol    (run.symbol)
-        , run_len   (run.run_len)
-        , freq      (run.freq)
-        , left      (run.left)
-        , right     (run.right)
+        : symbol        (run.symbol)
+        , run_len       (run.run_len)
+        , freq          (run.freq)
+        , left          (run.left)
+        , right         (run.right)
+        , codeword      (0)
+        , codeword_len  (0)
         { }
 
         Run(Run * left, Run * right)
-        : symbol    (0)
-        , run_len   (0)
-        , freq      (left->freq + right->freq)
-        , left      (left)
-        , right     (right)
+        : symbol        (0)
+        , run_len       (0)
+        , freq          (left->freq + right->freq)
+        , left          (left)
+        , right         (right)
+        , codeword      (0)
+        , codeword_len  (0)
         { }
 
         inline
         Run &
         operator=(Run run)
         {
-            this->symbol    = run.symbol;
-            this->run_len   = run.run_len;
-            this->freq      = run.freq;
-            this->left      = run.left;
-            this->right     = run.right;
+            this->symbol        = run.symbol;
+            this->run_len       = run.run_len;
+            this->freq          = run.freq;
+            this->left          = run.left;
+            this->right         = run.right;
+            this->codeword      = run.codeword;
+            this->codeword_len  = run.codeword_len;
 
             return *this;
         }
@@ -147,12 +161,15 @@ private:
     RunArrayType        runs_;
     HuffmanTreeType     root_;
 
+    void PrintHuffmanTree(FILE *, const Run *, const SizeType &);
+    void AssignCodeword(Run *, const CodewordType &, const SizeType &);
+
 public:
     void CollectRuns(std::ifstream &);
     void PrintAllRuns(FILE * = stdout);
     void CreateHuffmanTree(void);
     void PrintHuffmanTree(FILE * = stdout);
-    void PreOrderTraverse(Run *, const int &, std::function<void(Run *, const int &)>);
+    void AssignCodeword(void);
 };
 
 } /** ns: algorithm */
