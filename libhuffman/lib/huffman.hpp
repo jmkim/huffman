@@ -161,7 +161,7 @@ private:
     RunArrayType        runs_;
     HuffmanTreeType     root_;
 
-    void PrintHuffmanTree(FILE *, const Run *, const int &);
+    void PrintHuffmanTree(FILE *, const Run *, const SizeType &);
     void AssignCodeword(Run *, const CodewordType &, const SizeType &);
 
 public:
