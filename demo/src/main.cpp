@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include "huffman.hpp"
 
 using namespace algorithm;
@@ -21,23 +22,18 @@ main(const int argc, const char * argv[])
         return E_ARGUMENT_NOT_PROVIDED;
     }
 
-    std::string f_name = argv[1];
+    std::string fin_path = argv[1];
 
-    std::ifstream f(f_name, std::ios::binary);
-    if(! f.is_open())
+    std::ifstream fin(fin_path, std::ios::binary);
+    if(! fin.is_open())
     {
-        fprintf(stderr, "Error: File '%s' not found.\n", f_name.c_str());
+        fprintf(stderr, "Error: File '%s' not found.\n", fin_path.c_str());
         return E_FILE_NOT_FOUND;
     }
 
     Huffman huffman;
-    huffman.CollectRuns(f);
-    huffman.PrintAllRuns(stdout);
-    huffman.CreateHuffmanTree();
-    huffman.AssignCodeword();
-    huffman.PrintHuffmanTree(stdout);
-
-    f.close();
+    huffman.CompressFile(fin, fin_name, std::string(fin_name + ".z"));
+    fin.close();
 
     return E_SUCCESS;
 }

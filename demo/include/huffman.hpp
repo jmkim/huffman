@@ -2,6 +2,7 @@
 #define ALGORITHM_HUFFMAN_H_ 1
 
 #include <vector>
+#include <string>
 #include <functional>
 
 namespace algorithm
@@ -13,6 +14,10 @@ public:
     typedef unsigned char   SymbolType;
     typedef size_t          SizeType;
     typedef unsigned int    CodewordType;
+    typedef std::string     StringType;
+    typedef std::ifstream   FileInputType;
+    typedef std::ofstream   FileOutputType;
+    typedef uint32_t        EncodeBufferType;
 
     typedef std::pair<SymbolType, SizeType> MetaSymbolType;
 
@@ -28,6 +33,8 @@ public:
         CodewordType    codeword;
         SizeType        codeword_len;
 
+        Run *           next;
+
         Run(const SymbolType & symbol, const SizeType & run_len, const SizeType & freq = 0)
         : symbol        (symbol)
         , run_len       (run_len)
@@ -36,6 +43,7 @@ public:
         , right         (nullptr)
         , codeword      (0)
         , codeword_len  (0)
+        , next          (nullptr)
         { }
 
         Run(const MetaSymbolType & meta_symbol, const SizeType & freq = 0)
@@ -46,6 +54,7 @@ public:
         , right         (nullptr)
         , codeword      (0)
         , codeword_len  (0)
+        , next          (nullptr)
         { }
 
         Run(const Run & run)
@@ -54,8 +63,9 @@ public:
         , freq          (run.freq)
         , left          (run.left)
         , right         (run.right)
-        , codeword      (0)
-        , codeword_len  (0)
+        , codeword      (run.codeword)
+        , codeword_len  (run.codeword_len)
+        , next          (run.next)
         { }
 
         Run(Run * left, Run * right)
@@ -66,6 +76,7 @@ public:
         , right         (right)
         , codeword      (0)
         , codeword_len  (0)
+        , next          (nullptr)
         { }
 
         inline
@@ -79,6 +90,7 @@ public:
             this->right         = run.right;
             this->codeword      = run.codeword;
             this->codeword_len  = run.codeword_len;
+            this->next          = run.next;
 
             return *this;
         }
@@ -154,22 +166,32 @@ public:
         { return ! operator<(rhs); }
     };
 
-    typedef std::vector<Run>    RunArrayType;
-    typedef Run *               HuffmanTreeType;
+    typedef Run     RunType;
+
+    typedef std::vector<RunType>                        RunArrayType;
+    typedef std::array<RunType *, sizeof(SymbolType)>   RunListType;
+    typedef RunType *                                   HuffmanTreeType;
 
 private:
     RunArrayType        runs_;
+    RunListType         list_;
     HuffmanTreeType     root_;
 
-    void PrintHuffmanTree(FILE *, const Run *, const SizeType &);
-    void AssignCodeword(Run *, const CodewordType &, const SizeType &);
+    void CollectRuns(FileInputType &);
+    void CreateHuffmanTree(void);
+    void AssignCodeword(RunType *, const CodewordType & = 0, const SizeType & = 0);
+    void CreateRunList(RunType *);
+    RunType * GetRunFromList(const SymbolType &, const SizeType &);
+    void WriteHeader(FileInputType &, FileOutputType &);
+    void WriteEncode(FileInputType &, FileOutputType &);
+
+    void PrintHuffmanTree(FILE *, const RunType *, const SizeType &);
 
 public:
-    void CollectRuns(std::ifstream &);
+    void CompressFile(FileInputType &, const StringType &, const StringType &);
+
     void PrintAllRuns(FILE * = stdout);
-    void CreateHuffmanTree(void);
     void PrintHuffmanTree(FILE * = stdout);
-    void AssignCodeword(void);
 };
 
 } /** ns: algorithm */

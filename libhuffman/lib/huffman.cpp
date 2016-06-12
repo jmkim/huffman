@@ -10,26 +10,26 @@ using namespace algorithm;
 
 void
 Huffman
-::CollectRuns(std::ifstream & f)
+::CollectRuns(FileInputType & fin)
 {
     typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
     typedef     CacheType::iterator                     CacheIterType;
 
-    char        raw;                /**<   signed char (std::ifstream::read() need signed char ptr) */
+    char        raw;                /**<   signed char (FileInputType::read() need signed char ptr) */
     SymbolType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
     SymbolType  next_symbol;
     SizeType    run_len = 1;
     CacheType   cache;              /**< Caching a position of the run in the vector(runs_) */
 
-    if(! f.eof())
+    if(! fin.eof())
     {
-        f.read(&raw, sizeof(raw));
+        fin.read(&raw, sizeof(raw));
         symbol = (SymbolType)raw;   /** Cast signed to unsigned */
 
-        while(! f.eof())
+        while(! fin.eof())
         {
-            f.read(&raw, sizeof(raw));
-            if(f.eof()) break;
+            fin.read(&raw, sizeof(raw));
+            if(fin.eof()) break;
 
             next_symbol = (SymbolType)raw;
 
@@ -46,7 +46,7 @@ Huffman
 
                 if(cache_iter == cache.end())
                 {
-                    runs_.push_back(Run(meta_symbol, 1));           /** First appreance; freq is 1 */
+                    runs_.push_back(RunType(meta_symbol, 1));       /** First appreance; freq is 1 */
                     cache.emplace(meta_symbol, runs_.size() - 1);   /** Cache the position */
                 }
                 else
@@ -60,16 +60,15 @@ Huffman
 
         /** Process the remaining symbol */
         MetaSymbolType  meta_symbol = std::make_pair(symbol, run_len);
-        CacheIterType   cache_iter = cache.find(meta_symbol);       /** Get the position from cache */
-        Run             run(meta_symbol, 1);
+        CacheIterType   cache_iter = cache.find(meta_symbol);   /** Get the position from cache */
 
         if(cache_iter == cache.end())
         {
-            runs_.push_back(Run(meta_symbol, 1));                   /** First appreance; freq is 1 */
-            cache.emplace(meta_symbol, runs_.size() - 1);           /** Cache the position */
+            runs_.push_back(RunType(meta_symbol, 1));           /** First appreance; freq is 1 */
+            cache.emplace(meta_symbol, runs_.size() - 1);       /** Cache the position */
         }
         else
-            ++runs_.at(cache_iter->second);                         /** Add freq */
+            ++runs_.at(cache_iter->second);                     /** Add freq */
    }
 }
 
@@ -83,40 +82,34 @@ Huffman
         fprintf(f, " %02x %4d %d\n", run.symbol, run.run_len, run.freq);
 }
 
-
 void
 Huffman
 ::CreateHuffmanTree(void)
 {
-    Heap<Run>   heap;
+    Heap<RunType>   heap;
     for(auto run : runs_)
         heap.Push(run);
     
 
     while(heap.size() > 1)
     {
-        Run * left  = new Run(heap.Peek());
+        RunType * left  = new RunType(heap.Peek());
         heap.Pop();
 
-        Run * right = new Run(heap.Peek());
+        RunType * right = new RunType(heap.Peek());
         heap.Pop();
 
-        Run temp(left, right);
+        RunType temp(left, right);
         heap.Push(temp);
     }
 
-    root_ = new Run(heap.Peek());
+    root_ = new RunType(heap.Peek());
     heap.Pop();
 }
 
 void
 Huffman
-::PrintHuffmanTree(FILE * f)
-{ PrintHuffmanTree(f, root_, 0); }
-
-void
-Huffman
-::PrintHuffmanTree(FILE * f, const Run * node, const SizeType & depth)
+::PrintHuffmanTree(FILE * f, const RunType * node, const SizeType & depth)
 {
     for(int i = 0; i < depth; ++i)
         fprintf(f, " ");
@@ -138,7 +131,7 @@ Huffman
 
 void
 Huffman
-::AssignCodeword(Run * node, const CodewordType & codeword, const SizeType & codeword_len) 
+::AssignCodeword(RunType * node, const CodewordType & codeword, const SizeType & codeword_len)
 {
     if(node->left == nullptr && node->right == nullptr)
     {
@@ -152,10 +145,6 @@ Huffman
     }
 }
 
-void
-Huffman
-::AssignCodeword(void)
-{ AssignCodeword(root_, 0, 0); }
 void
 Huffman
 ::CreateRunList(RunType * node)
@@ -175,4 +164,69 @@ Huffman
         CreateRunList(node->left);
         CreateRunList(node->right);
     }
+}
+
+Huffman
+::RunType *
+Huffman
+::GetRunFromList(const SymbolType & symbol, const SizeType & run_len)
+{
+    if(list_.at(symbol) == nullptr || list_.at(symbol)->run_len == run_len)
+        return list_.at(symbol);
+    else
+    {
+        RunType *n;
+        for(n = list_.at(symbol); n->run_len == run_len || n->next != nullptr; n = n->next);
+
+        return n->next;
+    }
+}
+
+void
+Huffman
+::CompressFile(FileInputType & fin, const StringType & fin_path, const StringType & fout_path);
+{
+    FileOutputType fout(fout_path, std::ios::binary);
+
+    CollectRuns(fin);
+    WriteHeader(fin, fout);
+    CreateHuffmanTree();
+    AssignCodeword(root_, 0, 0);
+    CreateRunList(root_);
+
+    fin.seekg(0); /** Reset the input position indicator */
+
+    WriteEncode(fin, fout);
+}
+
+void
+Huffman
+::WriteHeader(FileInputType & fin, FileOutputType & fout)
+{
+    fout.write(reinperpret_cast<char *>(&runs_.size(), sizeof(runs_.size()));   /** Count of runs */
+    fout.write(reinperpret_cast<char *>(&fin.tellg()), sizeof(fin.tellg()));    /** Size of the input file */
+
+    for(auto run : runs_)
+    {
+        fout.write(reinperpret_cast<char *>(&run.symbol),  sizeof(run.symbol));
+        fout.write(reinperpret_cast<char *>(&run.run_len), sizeof(run.run_len));
+        fout.write(reinperpret_cast<char *>(&run.freq),    sizeof(run.freq));
+    }
+}
+
+void
+Huffman
+::WriteEncode(FileInputType & fin, FileOutputType & fout)
+{
+    while(! fin.eof())
+    {
+        EncodeBufferType buffer = 0;
+    }
+
+}
+
+void
+Huffman
+::RecogniseRun(FileInputType & fin)
+{
 }
