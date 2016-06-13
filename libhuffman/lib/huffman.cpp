@@ -42,7 +42,7 @@ Huffman
     fprintf(f, "SYM LENG FREQ\n");  /** Header of data */
 
     for(auto run : runs_)
-        fprintf(f, " %02x %4d %d\n", run.symbol, run.run_len, run.freq);
+        fprintf(f, " %02x %4lu %lu\n", run.symbol, run.run_len, run.freq);
 }
 
 void
@@ -303,7 +303,7 @@ Huffman
         fprintf(f, "null\n");
     else
     {
-        fprintf(f, "%02x:%d:%d:%d %x\n"
+        fprintf(f, "%02x:%lu:%lu:%lu %x\n"
                     , node->symbol
                     , node->run_len
                     , node->freq
