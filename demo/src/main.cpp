@@ -1,7 +1,7 @@
+#include "huffman.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "huffman.hpp"
 
 using namespace algorithm;
 
@@ -32,7 +32,8 @@ main(const int argc, const char * argv[])
     }
 
     Huffman huffman;
-    huffman.CompressFile(fin, fin_name, std::string(fin_name + ".z"));
+    huffman.CompressFile(fin, fin_path, std::string(fin_path + ".z"));
+
     fin.close();
 
     return E_SUCCESS;

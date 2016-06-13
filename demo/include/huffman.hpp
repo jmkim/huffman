@@ -1,9 +1,11 @@
 #ifndef ALGORITHM_HUFFMAN_H_
 #define ALGORITHM_HUFFMAN_H_ 1
 
+#include <fstream>
 #include <vector>
-#include <string>
-#include <functional>
+#include <array>
+#include <limits>
+#include <cstring>
 
 namespace algorithm
 {
@@ -11,13 +13,16 @@ namespace algorithm
 class Huffman
 {
 public:
-    typedef unsigned char   SymbolType;
-    typedef size_t          SizeType;
-    typedef unsigned int    CodewordType;
-    typedef std::string     StringType;
-    typedef std::ifstream   FileInputType;
-    typedef std::ofstream   FileOutputType;
-    typedef uint32_t        EncodeBufferType;
+    typedef size_t              SizeType;
+
+    typedef std::ifstream       FileInputType;
+    typedef std::ofstream       FileOutputType;
+
+    typedef uint32_t            EncodeBufferType;
+
+    typedef uint8_t             SymbolType;
+    typedef std::string         StringType;
+    typedef EncodeBufferType    CodewordType;
 
     typedef std::pair<SymbolType, SizeType> MetaSymbolType;
 
@@ -169,10 +174,20 @@ public:
     typedef Run     RunType;
 
     typedef std::vector<RunType>                        RunArrayType;
-    typedef std::array<RunType *, sizeof(SymbolType)>   RunListType;
+    typedef std::array<RunType *, std::numeric_limits<SymbolType>::max() + 1>   RunListType;
     typedef RunType *                                   HuffmanTreeType;
 
 private:
+    template<typename T>
+    void
+    WriteToFile(FileOutputType & fout, const T data)
+    {
+        const   StringType  str     = std::to_string(data);
+                char        strcharr[str.length() + 1];
+        std::strcpy(        strcharr, str.c_str());
+        fout.write (        strcharr, sizeof strcharr);
+    }
+
     RunArrayType        runs_;
     RunListType         list_;
     HuffmanTreeType     root_;
@@ -181,7 +196,7 @@ private:
     void CreateHuffmanTree(void);
     void AssignCodeword(RunType *, const CodewordType & = 0, const SizeType & = 0);
     void CreateRunList(RunType *);
-    RunType * GetRunFromList(const SymbolType &, const SizeType &);
+    bool GetCodeword(CodewordType &, const SymbolType &, const SizeType &);
     void WriteHeader(FileInputType &, FileOutputType &);
     void WriteEncode(FileInputType &, FileOutputType &);
 
@@ -191,7 +206,11 @@ public:
     void CompressFile(FileInputType &, const StringType &, const StringType &);
 
     void PrintAllRuns(FILE * = stdout);
-    void PrintHuffmanTree(FILE * = stdout);
+
+    inline
+    void
+    PrintHuffmanTree(FILE * fout = stdout)
+    { PrintHuffmanTree(fout, root_, 0); }
 };
 
 } /** ns: algorithm */

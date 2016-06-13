@@ -1,12 +1,49 @@
+#include "huffman.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <map>
 #include <utility>
-#include "huffman.hpp"
+#include <string>
+#include <cstring>
+#include <limits>
+
 #include "heap.hpp"
 
 using namespace algorithm;
+
+void
+Huffman
+::CompressFile(FileInputType & fin, const StringType & fin_path, const StringType & fout_path)
+{
+    FileOutputType fout(fout_path, std::ios::binary);
+
+    CollectRuns(fin);
+
+    fin.clear();    /** Remove eofbit */
+    WriteHeader(fin, fout);
+
+    CreateHuffmanTree();
+    AssignCodeword(root_, 0, 0);
+    CreateRunList(root_);
+
+    fin.seekg(0);   /** Reset the input position indicator */
+
+    WriteEncode(fin, fout);
+
+    fout.close();
+}
+
+void
+Huffman
+::PrintAllRuns(FILE * f)
+{
+    fprintf(f, "SYM LENG FREQ\n");  /** Header of data */
+
+    for(auto run : runs_)
+        fprintf(f, " %02x %4d %d\n", run.symbol, run.run_len, run.freq);
+}
 
 void
 Huffman
@@ -69,17 +106,7 @@ Huffman
         }
         else
             ++runs_.at(cache_iter->second);                     /** Add freq */
-   }
-}
-
-void
-Huffman
-::PrintAllRuns(FILE * f)
-{
-    fprintf(f, "SYM LENG FREQ\n");  /** Header of data */
-
-    for(auto run : runs_)
-        fprintf(f, " %02x %4d %d\n", run.symbol, run.run_len, run.freq);
+    }
 }
 
 void
@@ -109,28 +136,6 @@ Huffman
 
 void
 Huffman
-::PrintHuffmanTree(FILE * f, const RunType * node, const SizeType & depth)
-{
-    for(int i = 0; i < depth; ++i)
-        fprintf(f, " ");
-    if(node == nullptr)
-        fprintf(f, "null\n");
-    else
-    {
-        fprintf(f, "%02x:%d:%d:%d %d\n"
-                    , node->symbol
-                    , node->run_len
-                    , node->freq
-                    , node->codeword 
-                    , node->codeword_len);
-
-        PrintHuffmanTree(f, node->left,  depth + 1);
-        PrintHuffmanTree(f, node->right, depth + 1);
-    }
-}
-
-void
-Huffman
 ::AssignCodeword(RunType * node, const CodewordType & codeword, const SizeType & codeword_len)
 {
     if(node->left == nullptr && node->right == nullptr)
@@ -144,6 +149,7 @@ Huffman
         AssignCodeword(node->right, (codeword << 1) + 1, codeword_len + 1);
     }
 }
+int count;
 
 void
 Huffman
@@ -151,6 +157,7 @@ Huffman
 {
     if(node->left == nullptr && node->right == nullptr)
     {
+        //printf("[%4d] %02x:%d:%d:%d %x\n", ++count, node->symbol, node->run_len, node->freq, node->codeword_len, node->codeword);
         if(list_.at(node->symbol) == nullptr)
             list_.at(node->symbol) = node;
         else
@@ -161,56 +168,42 @@ Huffman
     }
     else
     {
-        CreateRunList(node->left);
-        CreateRunList(node->right);
+        if(node->left != nullptr)
+            CreateRunList(node->left);
+
+        if(node->right != nullptr)
+            CreateRunList(node->right);
     }
 }
 
+bool
 Huffman
-::RunType *
-Huffman
-::GetRunFromList(const SymbolType & symbol, const SizeType & run_len)
+::GetCodeword(CodewordType & codeword, const SymbolType & symbol, const SizeType & run_len)
 {
-    if(list_.at(symbol) == nullptr || list_.at(symbol)->run_len == run_len)
-        return list_.at(symbol);
+    RunType * n = list_.at(symbol);
+    for(; n != nullptr && n->run_len != run_len; n = n->next);
+
+    if(n == nullptr)
+        return false;
     else
     {
-        RunType *n;
-        for(n = list_.at(symbol); n->run_len == run_len || n->next != nullptr; n = n->next);
-
-        return n->next;
+        codeword = n->codeword;
+        return true;
     }
-}
-
-void
-Huffman
-::CompressFile(FileInputType & fin, const StringType & fin_path, const StringType & fout_path);
-{
-    FileOutputType fout(fout_path, std::ios::binary);
-
-    CollectRuns(fin);
-    WriteHeader(fin, fout);
-    CreateHuffmanTree();
-    AssignCodeword(root_, 0, 0);
-    CreateRunList(root_);
-
-    fin.seekg(0); /** Reset the input position indicator */
-
-    WriteEncode(fin, fout);
 }
 
 void
 Huffman
 ::WriteHeader(FileInputType & fin, FileOutputType & fout)
 {
-    fout.write(reinperpret_cast<char *>(&runs_.size(), sizeof(runs_.size()));   /** Count of runs */
-    fout.write(reinperpret_cast<char *>(&fin.tellg()), sizeof(fin.tellg()));    /** Size of the input file */
+    WriteToFile<RunArrayType::size_type>    (fout, runs_.size() );
+    WriteToFile<FileInputType::pos_type>    (fout, fin.tellg()  );
 
     for(auto run : runs_)
     {
-        fout.write(reinperpret_cast<char *>(&run.symbol),  sizeof(run.symbol));
-        fout.write(reinperpret_cast<char *>(&run.run_len), sizeof(run.run_len));
-        fout.write(reinperpret_cast<char *>(&run.freq),    sizeof(run.freq));
+        WriteToFile<SymbolType> (fout, run.symbol   );
+        WriteToFile<SizeType>   (fout, run.run_len  );
+        WriteToFile<SizeType>   (fout, run.freq     );
     }
 }
 
@@ -218,15 +211,106 @@ void
 Huffman
 ::WriteEncode(FileInputType & fin, FileOutputType & fout)
 {
-    while(! fin.eof())
-    {
-        EncodeBufferType buffer = 0;
-    }
+    char        raw;                /**<   signed char (FileInputType::read() need signed char ptr) */
+    SymbolType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
+    SymbolType  next_symbol;
+    SizeType    run_len = 1;
 
+    EncodeBufferType    buffer      = 0; /**< Buffer */
+    EncodeBufferType    buffer_stat = std::numeric_limits<EncodeBufferType>::max();
+
+    if(! fin.eof())
+    {
+        fin.read(&raw, sizeof(raw));
+        symbol = (SymbolType)raw;   /** Cast signed to unsigned */
+
+        while(! fin.eof())
+        {
+            fin.read(&raw, sizeof(raw));
+            if(fin.eof()) break;
+
+            next_symbol = (SymbolType)raw;
+
+            if(symbol == next_symbol)
+                ++run_len;
+            else
+            {
+                /** Insert the pair into runs_;
+                    key:    pair(symbol, run_len)
+                    value:  appearance frequency of key
+                */
+                CodewordType codeword;
+                bool cw_found = GetCodeword(codeword, symbol, run_len);
+
+                if(cw_found == false)
+                    return; /* TODO: Exception(Codeword not found)  */
+
+                while(codeword != 0)
+                {
+                    EncodeBufferType temp = codeword % 2;
+
+                    codeword    = codeword >> 1;
+
+                    buffer      = buffer << 1;
+                    buffer_stat = buffer_stat >> 1;
+
+                    buffer += temp;
+
+                    if(buffer_stat == 0)
+                    {
+                        WriteToFile<EncodeBufferType> (fout, buffer);
+
+                        buffer      = 0;
+                        buffer_stat = std::numeric_limits<EncodeBufferType>::max();
+                    }
+                }
+
+                run_len = 1;
+            }
+
+            symbol = next_symbol;
+        }
+
+        /** Process the remaining symbol */
+        CodewordType codeword;
+        bool cw_found = GetCodeword(codeword, symbol, run_len);
+
+        if(cw_found == false)
+            return; /* TODO: Exception(Codeword not found)  */
+
+        while(codeword != 0)
+        {
+            EncodeBufferType temp = codeword % 2;
+            codeword = codeword >> 1;
+            buffer = buffer << 1;
+            buffer += temp;
+
+            if(buffer > std::numeric_limits<EncodeBufferType>::max())
+                WriteToFile<EncodeBufferType> (fout, buffer);
+        }
+
+        run_len = 1;
+    }
 }
 
 void
 Huffman
-::RecogniseRun(FileInputType & fin)
+::PrintHuffmanTree(FILE * f, const RunType * node, const SizeType & depth)
 {
+    for(int i = 0; i < depth; ++i)
+        fprintf(f, "  ");
+    if(node == nullptr)
+        fprintf(f, "null\n");
+    else
+    {
+        fprintf(f, "%02x:%d:%d:%d %x\n"
+                    , node->symbol
+                    , node->run_len
+                    , node->freq
+                    , node->codeword_len
+                    , node->codeword);
+
+        PrintHuffmanTree(f, node->left,  depth + 1);
+        PrintHuffmanTree(f, node->right, depth + 1);
+    }
 }
