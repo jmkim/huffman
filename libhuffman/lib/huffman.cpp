@@ -21,14 +21,12 @@ Huffman
 
     CollectRuns(fin);
 
-    fin.clear();    /** Remove eofbit */
+    fin.clear();            /** Remove eofbit */
     WriteHeader(fin, fout);
 
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
     CreateRunList(root_);
-
-    fin.seekg(0);   /** Reset the input position indicator */
 
     WriteEncode(fin, fout);
 
@@ -57,6 +55,9 @@ Huffman
     SymbolType  next_symbol;
     SizeType    run_len = 1;
     CacheType   cache;              /**< Caching a position of the run in the vector(runs_) */
+
+    fin.clear();                    /** Reset the input position indicator */
+    fin.seekg(0, fin.beg);
 
     if(! fin.eof())
     {
@@ -197,6 +198,9 @@ Huffman
 ::WriteHeader(FileInputType & fin, FileOutputType & fout)
 {
     WriteToFile<RunArrayType::size_type>    (fout, runs_.size() );
+
+    fin.clear();
+    fin.seekg(0, fin.end);
     WriteToFile<FileInputType::pos_type>    (fout, fin.tellg()  );
 
     for(auto run : runs_)
@@ -218,6 +222,9 @@ Huffman
 
     EncodeBufferType    buffer      = 0; /**< Buffer */
     EncodeBufferType    buffer_stat = std::numeric_limits<EncodeBufferType>::max();
+
+    fin.clear();                    /** Reset the input position indicator */
+    fin.seekg(0, fin.beg);
 
     if(! fin.eof())
     {
