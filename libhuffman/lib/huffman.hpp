@@ -11,7 +11,7 @@ namespace algorithm
 class Huffman
 {
 public:
-    typedef unsigned char   SymbolType;
+    typedef uint8_t         SymbolType;
     typedef size_t          SizeType;
     typedef unsigned int    CodewordType;
     typedef std::string     StringType;
