@@ -58,65 +58,102 @@ main(void)
 
         vin.push_back(std::make_pair(codeword, size));
     }
-    while(vin.size() < 10);
+    while(vin.size() < 5);
 
-    std::cout << "Size of source: " << vin.tellg() << std::endl;
+    std::cout << "Size of source: " << vin.size() << std::endl;
 
     std::ostringstream fout (std::ios::binary);
 
     {
-        CodewordType    buffer;
-        SizeType        buf_counter = 32;
+        fout.clear();
+        fout.seekp(0, fout.beg);
 
-        while(! vin.size > 0)
+        const   SizeType        buf_cnt_max     = 8;
+        const   SizeType        buf_size_max    = 255;
+                CodewordType    buffer          = 5;
+                SizeType        buf_cnt_blank   = 3;
+
+        while(vin.size() > 0)
         {
-            CodewordPairType    pair            = vin.peek();
-            CodewordType        codeword        = pair.first();
-            SizeType            codeword_len    = pair.second();
+            CodewordPairType    pair            = vin.front();
+            vin.erase(vin.begin());
+            CodewordType        codeword        = pair.first;
+            SizeType            codeword_len    = pair.second;
 
-            if(vin.size() <= 0)
-                break;
-
-            buf_counter -= codeword_len;
-            if(buf_counter >= 0)
-                buffer << codeword_len;
-            else
+            while(codeword_len >= buf_cnt_blank)
             {
+                {
+                    printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+                    print_binary<uint32_t> (codeword, 8);
+                    printf("\n");
+                }
+
+                buffer <<= buf_cnt_blank;
+                buffer += (codeword >> (codeword_len - buf_cnt_blank));
+                codeword = codeword % (0x1 << codeword_len - buf_cnt_blank);
+                codeword_len -= buf_cnt_blank;
+
+                {
+                    printf("[BUF] %02x (%d)\t: ", buffer, buf_cnt_blank);
+                    print_binary<uint32_t> (buffer, 8);
+                    printf("\n");
+                }
+
+                fout.write((char *)&buffer, buf_cnt_max);
+                buffer = 0;
+                buf_cnt_blank = buf_cnt_max;
             }
 
             {
-                printf("[INP] %02x\n", raw);
-                printf("[BUF] ");
-
-                for(int i = 0; i < buf_counter; ++i)
-                    printf("%02x ", buffer[i]);
-
+                printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+                print_binary<uint32_t> (codeword, 8);
                 printf("\n");
             }
 
-            fout.clear();
-            fout.seekp(0, vout.end);
-            fout.write(&raw, sizeof(int8_t));
+            buffer <<= codeword_len;
+            buffer += codeword;
+            buf_cnt_blank -= codeword_len;
+        }
+    }
+
+    CodewordPairType    pair            = vin.front();
+    vin.erase(vin.begin());
+    CodewordType        codeword        = pair.first;
+    SizeType            codeword_len    = pair.second;
+
+    while(codeword_len >= buf_cnt_blank)
+    {
+        {
+            printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+            print_binary<uint32_t> (codeword, 8);
+            printf("\n");
         }
 
+        buffer <<= buf_cnt_blank;
+        buffer += (codeword >> (codeword_len - buf_cnt_blank));
+        codeword = codeword % (0x1 << codeword_len - buf_cnt_blank);
+        codeword_len -= buf_cnt_blank;
+
+        {
+            printf("[BUF] %02x (%d)\t: ", buffer, buf_cnt_blank);
+            print_binary<uint32_t> (buffer, 8);
+            printf("\n");
+        }
+
+        fout.write((char *)&buffer, buf_cnt_max);
+        buffer = 0;
+        buf_cnt_blank = buf_cnt_max;
     }
 
     {
-        printf("[FIN] ");
-
-        for(auto ch : fout.str())
-            printf("%02x ", ch);
-
-        printf("\n");
-
-        for(auto ch : fout.str())
-        {
-            printf("      %02x: ", ch);
-            print_binary<int> (ch, 8);
-        }
-
+        printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+        print_binary<uint32_t> (codeword, 8);
         printf("\n");
     }
+
+    buffer <<= codeword_len;
+    buffer += codeword;
+    buf_cnt_blank -= codeword_len;
 
     {
         fout.clear();
