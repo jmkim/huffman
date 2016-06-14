@@ -15,9 +15,9 @@ using namespace algorithm;
 
 void
 Huffman
-::CompressFile(FileInputType & fin, const StringType & fin_path, const StringType & fout_path)
+::CompressFile(FileStreamInType & fin, const StringType & fin_path, const StringType & fout_path)
 {
-    FileOutputType fout(fout_path, std::ios::binary);
+    FileStreamOutType fout(fout_path, std::ios::binary);
 
     CollectRuns(fin);
 
@@ -45,14 +45,14 @@ Huffman
 
 void
 Huffman
-::CollectRuns(FileInputType & fin)
+::CollectRuns(FileStreamInType & fin)
 {
     typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
     typedef     CacheType::iterator                     CacheIterType;
 
-    char        raw;                /**<   signed char (FileInputType::read() need signed char ptr) */
-    SymbolType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
-    SymbolType  next_symbol;
+    char        raw;                /**<   signed char (FileStreamInType::read() need signed char ptr) */
+    ByteType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
+    ByteType  next_symbol;
     SizeType    run_len = 1;
     CacheType   cache;              /**< Caching a position of the run in the vector(runs_) */
 
@@ -62,14 +62,14 @@ Huffman
     if(! fin.eof())
     {
         fin.read(&raw, sizeof(raw));
-        symbol = (SymbolType)raw;   /** Cast signed to unsigned */
+        symbol = (ByteType)raw;   /** Cast signed to unsigned */
 
         while(! fin.eof())
         {
             fin.read(&raw, sizeof(raw));
             if(fin.eof()) break;
 
-            next_symbol = (SymbolType)raw;
+            next_symbol = (ByteType)raw;
 
             if(symbol == next_symbol)
                 ++run_len;
@@ -177,101 +177,100 @@ Huffman
     }
 }
 
-bool
 Huffman
-::GetCodeword(CodewordType & codeword, const SymbolType & symbol, const SizeType & run_len)
+::SizeType
+Huffman
+::GetCodeword(CodewordType & codeword, const ByteType & symbol, const SizeType & run_len)
 {
     RunType * n = list_.at(symbol);
     for(; n != nullptr && n->run_len != run_len; n = n->next);
 
     if(n == nullptr)
-        return false;
+        return 0;
     else
     {
         codeword = n->codeword;
-        return true;
+        return n->codeword_len;
     }
 }
 
 void
 Huffman
-::WriteHeader(FileInputType & fin, FileOutputType & fout)
+::WriteHeader(FileStreamInType & fin, FileStreamOutType & fout)
 {
-    WriteToFile<RunArrayType::size_type>    (fout, runs_.size() );
+    uint16_t run_size = uint16_t(runs_.size());
+    WriteToFile<uint16_t>(fout, run_size);
 
     fin.clear();
     fin.seekg(0, fin.end);
-    WriteToFile<FileInputType::pos_type>    (fout, fin.tellg()  );
+    uint32_t fin_size = uint32_t(fin.tellg());
+    WriteToFile<SizeType>(fout, SizeType(fin.tellg()));
 
     for(auto run : runs_)
     {
-        WriteToFile<SymbolType> (fout, run.symbol   );
-        WriteToFile<SizeType>   (fout, run.run_len  );
-        WriteToFile<SizeType>   (fout, run.freq     );
+        WriteToFile<ByteType>(fout, run.symbol);
+        WriteToFile<SizeType>(fout, run.run_len);
+        WriteToFile<SizeType>(fout, run.freq);
     }
 }
 
 void
 Huffman
-::WriteEncode(FileInputType & fin, FileOutputType & fout)
+::WriteEncode(FileStreamInType & fin, FileStreamOutType & fout)
 {
-    char        raw;                /**<   signed char (FileInputType::read() need signed char ptr) */
-    SymbolType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
-    SymbolType  next_symbol;
-    SizeType    run_len = 1;
+    const   SizeType            bufstat_max     = buffer_size;
+            SizeType            bufstat_free    = bufstat_max;
+            CodewordType        buffer          = 0;
+            char                raw;            /**<   signed char (std::ifstream::read() need signed char ptr) */
+            ByteType            symbol;         /**< unsigned char (ascii range is 0 to 255) */
+            ByteType            next_symbol;
+            SizeType            run_len         = 1;
 
-    EncodeBufferType    buffer      = 0; /**< Buffer */
-    EncodeBufferType    buffer_stat = std::numeric_limits<EncodeBufferType>::max();
-
-    fin.clear();                    /** Reset the input position indicator */
+    /** Reset the input position indicator */
+    fin.clear();
     fin.seekg(0, fin.beg);
 
     if(! fin.eof())
     {
         fin.read(&raw, sizeof(raw));
-        symbol = (SymbolType)raw;   /** Cast signed to unsigned */
+        symbol = (ByteType)raw; /** Cast signed to unsigned */
 
         while(! fin.eof())
         {
             fin.read(&raw, sizeof(raw));
-            if(fin.eof()) break;
+            if(fin.eof())
+                break;
 
-            next_symbol = (SymbolType)raw;
+            next_symbol = (ByteType)raw;
 
             if(symbol == next_symbol)
                 ++run_len;
             else
             {
-                /** Insert the pair into runs_;
-                    key:    pair(symbol, run_len)
-                    value:  appearance frequency of key
-                */
-                CodewordType codeword;
-                bool cw_found = GetCodeword(codeword, symbol, run_len);
+                /** Write the codeword to fout */
 
-                if(cw_found == false)
+                CodewordType    codeword;
+                SizeType        codeword_len = GetCodeword(codeword, symbol, run_len);
+
+                if(codeword_len == 0)
                     return; /* TODO: Exception(Codeword not found)  */
 
-                while(codeword != 0)
+                while(codeword_len >= bufstat_free)
                 {
-                    EncodeBufferType temp = codeword % 2;
+                    buffer <<= bufstat_free;
+                    buffer += (codeword >> (codeword_len - bufstat_free));
+                    codeword = codeword % (0x1 << codeword_len - bufstat_free);
+                    codeword_len -= bufstat_free;
 
-                    codeword    = codeword >> 1;
+                    WriteToFile<CodewordType>(fout, buffer, false);
 
-                    buffer      = buffer << 1;
-                    buffer_stat = buffer_stat >> 1;
-
-                    buffer += temp;
-
-                    if(buffer_stat == 0)
-                    {
-                        WriteToFile<EncodeBufferType> (fout, buffer);
-
-                        buffer      = 0;
-                        buffer_stat = std::numeric_limits<EncodeBufferType>::max();
-                    }
+                    buffer = 0;
+                    bufstat_free = bufstat_max;
                 }
 
+                buffer <<= codeword_len;
+                buffer += codeword;
+                bufstat_free -= codeword_len;
                 run_len = 1;
             }
 
@@ -279,21 +278,14 @@ Huffman
         }
 
         /** Process the remaining symbol */
-        CodewordType codeword;
-        bool cw_found = GetCodeword(codeword, symbol, run_len);
-
-        if(cw_found == false)
-            return; /* TODO: Exception(Codeword not found)  */
-
-        while(codeword != 0)
+        if(bufstat_free != bufstat_max)
         {
-            EncodeBufferType temp = codeword % 2;
-            codeword = codeword >> 1;
-            buffer = buffer << 1;
-            buffer += temp;
+            buffer <<= bufstat_free;
 
-            if(buffer > std::numeric_limits<EncodeBufferType>::max())
-                WriteToFile<EncodeBufferType> (fout, buffer);
+            WriteToFile<CodewordType>(fout, buffer, true);
+
+            buffer = 0;
+            bufstat_free = bufstat_max;
         }
 
         run_len = 1;
