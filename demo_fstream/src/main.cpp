@@ -48,7 +48,7 @@ main(void)
             }
 
             fout.clear();
-            fout.seekp(0, fin.end);
+            fout.seekp(0, fout.end);
             fout.write(&raw, sizeof(int8_t));
         }
     }
