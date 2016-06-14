@@ -83,7 +83,7 @@ main(void)
             while(codeword_len >= buf_cnt_blank)
             {
                 {
-                    printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+                    printf("[INP] %2x (%lu)\t: ", codeword, codeword_len);
                     print_binary<uint32_t> (codeword, 8);
                     printf("\n");
                 }
@@ -94,7 +94,7 @@ main(void)
                 codeword_len -= buf_cnt_blank;
 
                 {
-                    printf("[BUF] %02x (%d)\t: ", buffer, buf_cnt_blank);
+                    printf("[BUF] %02x (%lu)\t: ", buffer, buf_cnt_blank);
                     print_binary<uint32_t> (buffer, 8);
                     printf("\n");
                 }
@@ -105,7 +105,7 @@ main(void)
             }
 
             {
-                printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+                printf("[INP] %2x (%lu)\t: ", codeword, codeword_len);
                 print_binary<uint32_t> (codeword, 8);
                 printf("\n");
             }
@@ -124,7 +124,7 @@ main(void)
     while(codeword_len >= buf_cnt_blank)
     {
         {
-            printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+            printf("[INP] %2x (%lu)\t: ", codeword, codeword_len);
             print_binary<uint32_t> (codeword, 8);
             printf("\n");
         }
@@ -135,7 +135,7 @@ main(void)
         codeword_len -= buf_cnt_blank;
 
         {
-            printf("[BUF] %02x (%d)\t: ", buffer, buf_cnt_blank);
+            printf("[BUF] %02x (%lu)\t: ", buffer, buf_cnt_blank);
             print_binary<uint32_t> (buffer, 8);
             printf("\n");
         }
@@ -146,7 +146,7 @@ main(void)
     }
 
     {
-        printf("[INP] %2x (%d)\t: ", codeword, codeword_len);
+        printf("[INP] %2x (%lu)\t: ", codeword, codeword_len);
         print_binary<uint32_t> (codeword, 8);
         printf("\n");
     }
