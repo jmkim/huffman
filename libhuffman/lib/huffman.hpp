@@ -280,10 +280,13 @@ private:
     SizeType GetCodeword(CodewordType &, const ByteType &, const SizeType &);
     void WriteHeader(FileStreamInType &, FileStreamOutType &);
     void WriteEncode(FileStreamInType &, FileStreamOutType &);
+    void WriteDecode(FileStreamInType &, FileStreamOutType &);
     void PrintHuffmanTree(FILE *, const RunType *, const SizeType &);
+    SizeType ReadHeader(FileStreamInType &);
 
 public:
     void CompressFile(FileStreamInType &, const StringType &, const StringType &);
+    void DecompressFile(FileStreamInType &, const StringType &, const StringType &);
     void PrintAllRuns(FILE * = stdout);
 
     inline

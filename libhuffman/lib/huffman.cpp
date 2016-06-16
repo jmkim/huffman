@@ -31,6 +31,27 @@ Huffman
     WriteEncode(fin, fout);
 
     fout.close();
+
+    FileStreamInType fout_in(fout_path, std::ios::binary);
+    ReadHeader(fout_in);
+    fout_in.close();
+}
+
+void
+Huffman
+::DecompressFile(FileStreamInType & fin, const StringType & fin_path, const StringType & fout_path)
+{
+    FileStreamOutType fout(fout_path, std::ios::binary);
+
+    ReadHeader(fin);
+
+    CreateHuffmanTree();
+    AssignCodeword(root_, 0, 0);
+    CreateRunList(root_);
+
+    WriteDecode(fin, fout);
+
+    fout.close();
 }
 
 void
@@ -51,8 +72,8 @@ Huffman
     typedef     CacheType::iterator                     CacheIterType;
 
     char        raw;                /**<   signed char (FileStreamInType::read() need signed char ptr) */
-    ByteType  symbol;             /**< unsigned char (ascii range is 0 to 255) */
-    ByteType  next_symbol;
+    ByteType    symbol;             /**< unsigned char (ascii range is 0 to 255) */
+    ByteType    next_symbol;
     SizeType    run_len = 1;
     CacheType   cache;              /**< Caching a position of the run in the vector(runs_) */
 
@@ -84,11 +105,11 @@ Huffman
 
                 if(cache_iter == cache.end())
                 {
-                    runs_.push_back(RunType(meta_symbol, 1));       /** First appreance; freq is 1 */
-                    cache.emplace(meta_symbol, runs_.size() - 1);   /** Cache the position */
+                    runs_.push_back(RunType(meta_symbol, 1));           /** First appreance; freq is 1 */
+                    cache.emplace(meta_symbol, runs_.size() - 1);       /** Cache the position */
                 }
                 else
-                    ++runs_.at(cache_iter->second);                 /** Add freq */
+                    ++runs_.at(cache_iter->second);                     /** Add freq */
 
                 run_len = 1;
             }
@@ -98,15 +119,15 @@ Huffman
 
         /** Process the remaining symbol */
         MetaSymbolType  meta_symbol = std::make_pair(symbol, run_len);
-        CacheIterType   cache_iter = cache.find(meta_symbol);   /** Get the position from cache */
+        CacheIterType   cache_iter = cache.find(meta_symbol);           /** Get the position from cache */
 
         if(cache_iter == cache.end())
         {
-            runs_.push_back(RunType(meta_symbol, 1));           /** First appreance; freq is 1 */
-            cache.emplace(meta_symbol, runs_.size() - 1);       /** Cache the position */
+            runs_.push_back(RunType(meta_symbol, 1));                   /** First appreance; freq is 1 */
+            cache.emplace(meta_symbol, runs_.size() - 1);               /** Cache the position */
         }
         else
-            ++runs_.at(cache_iter->second);                     /** Add freq */
+            ++runs_.at(cache_iter->second);                             /** Add freq */
     }
 }
 
@@ -312,4 +333,30 @@ Huffman
         PrintHuffmanTree(f, node->left,  depth + 1);
         PrintHuffmanTree(f, node->right, depth + 1);
     }
+}
+
+Huffman::
+SizeType
+Huffman::
+ReadHeader(FileStreamInType & fin)
+{
+    typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
+    typedef     CacheType::iterator                     CacheIterType;
+
+    fin.clear();
+    fin.seekg(0, fin.beg);
+
+    uint16_t run_size;
+    ReadFromFile<uint16_t>(fin, run_size);
+
+    uint32_t fin_size;
+    ReadFromFile<uint32_t>(fin, fin_size);
+    printf("%d %d\n", run_size, fin_size);
+}
+
+void
+Huffman::
+WriteDecode(FileStreamInType & fin, FileStreamOutType & fout)
+{
+
 }
