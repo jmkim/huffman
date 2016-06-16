@@ -227,6 +227,26 @@ private:
         fout.write((char *)&buffer, sizeof(unsigned char) * (last_pos + 1));
     }
 
+    template<typename T = CodewordType>
+    void
+    ReadFromFile(FileStreamInType & fin, T & dest)
+    {
+        const   SizeType        byte_size           = 8;
+        const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
+        const   SizeType        type_size           = sizeof(T) * byte_size;
+        const   SizeType        buffer_size         = (type_size / char_size)
+                                                    + ((type_size % char_size == 0) ? 0 : 1);
+                unsigned char   buffer[buffer_size] = { 0, };
+
+        fin.read((char *)&buffer, sizeof(unsigned char) * buffer_size);
+
+        for(int i = 0; i < buffer_size; ++i)
+        {
+            dest <<= byte_size;
+            dest += buffer[i];
+        }
+    }
+
     template<typename T = ByteType>
     void
     PrintBinary(FILE * fout, T src, const size_t & buffer_size = buffer_size)
