@@ -11,7 +11,7 @@
 namespace algorithm
 {
 
-/** \breif  Modified Huffman coding
+/** \brief  Modified Huffman coding
 
     Huffman coding method with Run Length Encoding.
     Combines the variable length codes of Huffman coding with the
