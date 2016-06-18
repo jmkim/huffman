@@ -10,14 +10,15 @@
 #include <limits>
 
 #include "heap.hpp"
+#include "binarystream.hpp"
 
 using namespace algorithm;
 
 void
 Huffman
-::CompressFile(FileStreamInType & fin, const StringType & fin_path, const StringType & fout_path)
+::CompressFile(StreamInType & fin, const StringType & fin_path, const StringType & fout_path)
 {
-    FileStreamOutType fout(fout_path, std::ios::binary);
+    StreamOutType fout(fout_path, std::ios::binary);
 
     CollectRuns(fin);
 
@@ -32,16 +33,16 @@ Huffman
 
     fout.close();
 
-    FileStreamInType fout_in(fout_path, std::ios::binary);
+    StreamInType fout_in(fout_path, std::ios::binary);
     ReadHeader(fout_in);
     fout_in.close();
 }
 
 void
 Huffman
-::DecompressFile(FileStreamInType & fin, const StringType & fin_path, const StringType & fout_path)
+::DecompressFile(StreamInType & fin, const StringType & fin_path, const StringType & fout_path)
 {
-    FileStreamOutType fout(fout_path, std::ios::binary);
+    StreamOutType fout(fout_path, std::ios::binary);
 
     ReadHeader(fin);
 
@@ -66,12 +67,12 @@ Huffman
 
 void
 Huffman
-::CollectRuns(FileStreamInType & fin)
+::CollectRuns(StreamInType & fin)
 {
     typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
     typedef     CacheType::iterator                     CacheIterType;
 
-    char        raw;                /**<   signed char (FileStreamInType::read() need signed char ptr) */
+    char        raw;                /**<   signed char (StreamInType::read() need signed char ptr) */
     ByteType    symbol;             /**< unsigned char (ascii range is 0 to 255) */
     ByteType    next_symbol;
     SizeType    run_len = 1;
@@ -217,28 +218,28 @@ Huffman
 
 void
 Huffman
-::WriteHeader(FileStreamInType & fin, FileStreamOutType & fout)
+::WriteHeader(StreamInType & fin, StreamOutType & fout)
 {
     uint16_t run_size = uint16_t(runs_.size());
-    WriteToFile<uint16_t>(fout, run_size);
+    BinaryStream::Write<uint16_t>(fout, run_size);
 
     fin.clear();
     fin.seekg(0, fin.end);
 
     uint32_t fin_size = uint32_t(fin.tellg());
-    WriteToFile<uint32_t>(fout, SizeType(fin.tellg()));
+    BinaryStream::Write<uint32_t>(fout, SizeType(fin.tellg()));
 
     for(auto run : runs_)
     {
-        WriteToFile<ByteType>(fout, run.symbol);
-        WriteToFile<SizeType>(fout, run.run_len);
-        WriteToFile<SizeType>(fout, run.freq);
+        BinaryStream::Write<ByteType>(fout, run.symbol);
+        BinaryStream::Write<SizeType>(fout, run.run_len);
+        BinaryStream::Write<SizeType>(fout, run.freq);
     }
 }
 
 void
 Huffman
-::WriteEncode(FileStreamInType & fin, FileStreamOutType & fout)
+::WriteEncode(StreamInType & fin, StreamOutType & fout)
 {
     const   SizeType            bufstat_max     = buffer_size;
             SizeType            bufstat_free    = bufstat_max;
@@ -284,7 +285,7 @@ Huffman
                     codeword = codeword % (0x1 << codeword_len - bufstat_free);
                     codeword_len -= bufstat_free;
 
-                    WriteToFile<CodewordType>(fout, buffer, false);
+                    BinaryStream::Write<CodewordType>(fout, buffer, false);
 
                     buffer = 0;
                     bufstat_free = bufstat_max;
@@ -304,7 +305,7 @@ Huffman
         {
             buffer <<= bufstat_free;
 
-            WriteToFile<CodewordType>(fout, buffer, true);
+            BinaryStream::Write<CodewordType>(fout, buffer, true);
 
             buffer = 0;
             bufstat_free = bufstat_max;
@@ -339,7 +340,7 @@ Huffman
 Huffman::
 SizeType
 Huffman::
-ReadHeader(FileStreamInType & fin)
+ReadHeader(StreamInType & fin)
 {
     typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
     typedef     CacheType::iterator                     CacheIterType;
@@ -348,23 +349,23 @@ ReadHeader(FileStreamInType & fin)
     fin.seekg(0, fin.beg);
 
     uint16_t run_size;
-    ReadFromFile<uint16_t>(fin, run_size);
+    BinaryStream::Read<uint16_t>(fin, run_size);
 
     uint32_t fin_size;
-    ReadFromFile<uint32_t>(fin, fin_size);
+    BinaryStream::Read<uint32_t>(fin, fin_size);
 
     runs_.clear();
 
     for(int i = 0; i < run_size; ++i)
     {
         ByteType symbol;
-        ReadFromFile<ByteType>(fin, symbol);
+        BinaryStream::Read<ByteType>(fin, symbol);
 
         SizeType run_len;
-        ReadFromFile<SizeType>(fin, run_len);
+        BinaryStream::Read<SizeType>(fin, run_len);
 
         SizeType freq;
-        ReadFromFile<SizeType>(fin, freq);
+        BinaryStream::Read<SizeType>(fin, freq);
 
         Run temp = Run(symbol, run_len, freq);
         runs_.push_back(temp);
@@ -373,7 +374,7 @@ ReadHeader(FileStreamInType & fin)
 
 void
 Huffman::
-WriteDecode(FileStreamInType & fin, FileStreamOutType & fout)
+WriteDecode(StreamInType & fin, StreamOutType & fout)
 {
 
 }

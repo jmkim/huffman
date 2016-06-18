@@ -22,8 +22,8 @@ class Huffman
 public:
     typedef size_t          SizeType;
 
-    typedef std::ifstream   FileStreamInType;
-    typedef std::ofstream   FileStreamOutType;
+    typedef std::ifstream   StreamInType;
+    typedef std::ofstream   StreamOutType;
 
     typedef std::string     StringType;
 
@@ -205,92 +205,20 @@ private:
     HuffmanTreeType     root_;      /** Root node of the Huffman tree */
 
     /** Member functions */
-    template<typename T = CodewordType>
-    void
-    WriteToFile(FileStreamOutType & fout, T src, const bool & rm_trailing_zerobit = false)
-    {
-        /** Do not use defualt buffer_size (which is 32) */
-        const   SizeType        byte_size           = 8;
-        const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
-        const   SizeType        type_size           = sizeof(T) * byte_size;
-        const   SizeType        buffer_size         = (type_size / char_size)
-                                                    + ((type_size % char_size == 0) ? 0 : 1);
-                unsigned char   buffer[buffer_size] = { 0, };
-
-        for(int i = buffer_size - 1; i >= 0; --i)
-        {
-            buffer[i] = src % (0x1 << byte_size);
-            src >>= byte_size;
-        }
-
-        SizeType last_pos = buffer_size - 1;
-
-        if(rm_trailing_zerobit == true)
-            for(; last_pos > 0 && buffer[last_pos] == 0x0; --last_pos);
-
-        fout.write((char *)&buffer, sizeof(unsigned char) * (last_pos + 1));
-    }
-
-    template<typename T = CodewordType>
-    void
-    ReadFromFile(FileStreamInType & fin, T & dest)
-    {
-        const   SizeType        byte_size           = 8;
-        const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
-        const   SizeType        type_size           = sizeof(T) * byte_size;
-        const   SizeType        buffer_size         = (type_size / char_size)
-                                                    + ((type_size % char_size == 0) ? 0 : 1);
-                unsigned char   buffer[buffer_size] = { 0, };
-
-        fin.read((char *)&buffer, sizeof(unsigned char) * buffer_size);
-
-        for(int i = 0; i < buffer_size; ++i)
-        {
-            dest <<= byte_size;
-            dest += buffer[i];
-        }
-    }
-
-    template<typename T = ByteType>
-    void
-    PrintBinary(FILE * fout, T src, const size_t & buffer_size = buffer_size)
-    {
-        while(src != 0)
-        {
-            ByteType buffer[buffer_size] = { 0, };
-
-            for(int bpos = buffer_size - 1; bpos >= 0; --bpos)
-            {
-                buffer[bpos] = ((src % 2 == 0) ? zerobit : nonzerobit);
-                src = src >> 1;
-            }
-
-            for(int i = 0; i < buffer_size; ++i)
-            {
-                if(i != 0 && i % 4 == 0)
-                    fprintf(fout, " ");
-
-                fprintf(fout, "%d", buffer[i]);
-            }
-
-            fprintf(fout, " ");
-        }
-    }
-
-    void CollectRuns(FileStreamInType &);
+    void CollectRuns(StreamInType &);
     void CreateHuffmanTree(void);
     void AssignCodeword(RunType *, const CodewordType & = 0, const SizeType & = 0);
     void CreateRunList(RunType *);
     SizeType GetCodeword(CodewordType &, const ByteType &, const SizeType &);
-    void WriteHeader(FileStreamInType &, FileStreamOutType &);
-    void WriteEncode(FileStreamInType &, FileStreamOutType &);
-    void WriteDecode(FileStreamInType &, FileStreamOutType &);
+    void WriteHeader(StreamInType &, StreamOutType &);
+    void WriteEncode(StreamInType &, StreamOutType &);
+    void WriteDecode(StreamInType &, StreamOutType &);
     void PrintHuffmanTree(FILE *, const RunType *, const SizeType &);
-    SizeType ReadHeader(FileStreamInType &);
+    SizeType ReadHeader(StreamInType &);
 
 public:
-    void CompressFile(FileStreamInType &, const StringType &, const StringType &);
-    void DecompressFile(FileStreamInType &, const StringType &, const StringType &);
+    void CompressFile(StreamInType &, const StringType &, const StringType &);
+    void DecompressFile(StreamInType &, const StringType &, const StringType &);
     void PrintAllRuns(FILE * = stdout);
 
     inline

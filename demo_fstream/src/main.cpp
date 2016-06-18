@@ -3,91 +3,16 @@
 #include <string>
 #include <queue>
 
+#include "binarystream.hpp"
+
+using namespace algorithm;
+
 typedef uint8_t     ByteType;
 typedef uint32_t    CodewordType;
 typedef size_t      SizeType;
 
-typedef std::istringstream  FileStreamInType;
-typedef std::ostringstream  FileStreamOutType;
-
-template<typename T = ByteType>
-void
-PrintBinary(T src, const size_t & byte_size)
-{
-    const ByteType  zerobit     = 0;
-    const ByteType  nonzerobit  = 1;
-          int       bpos        = 0;
-
-    while(src != 0)
-    {
-        ByteType buffer[byte_size] = { 0, };
-
-        for(bpos = byte_size - 1; bpos >= 0; --bpos)
-        {
-            buffer[bpos] = ((src % 2 == 0) ? zerobit : nonzerobit);
-            src = src >> 1;
-        }
-
-        if(bpos < 0)
-            bpos = 0;
-
-        for(int i = 0; i < byte_size; ++i)
-        {
-            if(i != 0 && i % 4 == 0)
-                printf(" ");
-            printf("%d", buffer[i]);
-        }
-
-        //printf("(%d) ", bpos);
-        printf(" ");
-    }
-}
-
-template<typename T = CodewordType>
-void
-WriteToFile(FileStreamOutType & fout, T src, const bool & rm_trailing_zerobit = false)
-{
-    /** Do not use defualt buffer_size (which is 32) */
-    const   SizeType        byte_size           = 8;
-    const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
-    const   SizeType        type_size           = sizeof(T) * byte_size;
-    const   SizeType        buffer_size         = (type_size / char_size)
-                                                + ((type_size % char_size == 0) ? 0 : 1);
-            unsigned char   buffer[buffer_size] = { 0, };
-
-    for(int i = buffer_size - 1; i >= 0; --i)
-    {
-        buffer[i] = src % (0x1 << byte_size);
-        src >>= byte_size;
-    }
-
-    SizeType last_pos = buffer_size - 1;
-
-    if(rm_trailing_zerobit == true)
-        for(; last_pos > 0 && buffer[last_pos] == 0x0; --last_pos);
-
-    fout.write((char *)&buffer, sizeof(unsigned char) * (last_pos + 1));
-}
-
-template<typename T = CodewordType>
-void
-ReadFromFile(FileStreamInType & fin, T & dest)
-{
-    const   SizeType        byte_size           = 8;
-    const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
-    const   SizeType        type_size           = sizeof(T) * byte_size;
-    const   SizeType        buffer_size         = (type_size / char_size)
-                                                + ((type_size % char_size == 0) ? 0 : 1);
-            unsigned char   buffer[buffer_size] = { 0, };
-
-    fin.read((char *)&buffer, sizeof(unsigned char) * buffer_size);
-
-    for(int i = 0; i < buffer_size; ++i)
-    {
-        dest <<= byte_size;
-        dest += buffer[i];
-    }
-}
+typedef std::istringstream  StreamInType;
+typedef std::ostringstream  StreamOutType;
 
 int
 main(void)
@@ -138,7 +63,7 @@ main(void)
             {
                 {
                     printf("[INP] %02x (%lu)\t: ", codeword, codeword_len);
-                    PrintBinary<CodewordType> (codeword, byte_size);
+                    BinaryStream::Print<CodewordType>(std::cout, codeword, byte_size);
                     printf("\n");
                 }
 
@@ -149,11 +74,11 @@ main(void)
 
                 {
                     printf("[BUF] %02x (%lu)\t: ", buffer, bufstat_free);
-                    PrintBinary<CodewordType> (buffer, byte_size);
+                    BinaryStream::Print<CodewordType>(std::cout, buffer, byte_size);
                     printf("\n");
                 }
 
-                WriteToFile<CodewordType>(fout, buffer, false);
+                BinaryStream::Write<CodewordType>(fout, buffer, false);
 
                 buffer = 0;
                 bufstat_free = bufstat_max;
@@ -161,7 +86,7 @@ main(void)
 
             {
                 printf("[INP] %02x (%lu)\t: ", codeword, codeword_len);
-                PrintBinary<CodewordType> (codeword, byte_size);
+                BinaryStream::Print<CodewordType>(std::cout, codeword, byte_size);
                 printf("\n");
             }
 
@@ -176,11 +101,11 @@ main(void)
 
             {
                 printf("[BUF] %02x (%lu)\t: ", buffer, bufstat_free);
-                PrintBinary<CodewordType> (buffer, byte_size);
+                BinaryStream::Print<CodewordType>(std::cout, buffer, byte_size);
                 printf("\n");
             }
 
-            WriteToFile<CodewordType>(fout, buffer, true);
+            BinaryStream::Write<CodewordType>(fout, buffer, true);
 
             buffer = 0;
             bufstat_free = bufstat_max;
@@ -198,7 +123,7 @@ main(void)
         for(ByteType ch : fout.str())
         {
             printf("      %02x: ", ch);
-            PrintBinary<CodewordType> (ch, bufcharr_size);
+            BinaryStream::Print<CodewordType>(std::cout, ch, bufcharr_size);
             printf("\n");
         }
     }
@@ -212,15 +137,15 @@ main(void)
     {
         CodewordType buffer;
 
-        FileStreamInType fin(fout.str());
+        StreamInType fin(fout.str());
 
         while(! fin.eof())
         {
-            ReadFromFile<CodewordType>(fin, buffer);
+            BinaryStream::Read<CodewordType>(fin, buffer);
 
             {
                 printf("[BUF] %02x\t: ", buffer);
-                PrintBinary<CodewordType> (buffer, byte_size);
+                BinaryStream::Print<CodewordType>(std::cout, buffer, byte_size);
                 printf("\n");
             }
         }
