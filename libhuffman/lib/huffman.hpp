@@ -210,13 +210,17 @@ private:
     WriteToFile(FileStreamOutType & fout, T src, const bool & rm_trailing_zerobit = false)
     {
         /** Do not use defualt buffer_size (which is 32) */
-        const   SizeType        buffer_size         = 4;
+        const   SizeType        byte_size           = 8;
+        const   SizeType        char_size           = sizeof(unsigned char) * byte_size;
+        const   SizeType        type_size           = sizeof(T) * byte_size;
+        const   SizeType        buffer_size         = (type_size / char_size)
+                                                    + ((type_size % char_size == 0) ? 0 : 1);
                 unsigned char   buffer[buffer_size] = { 0, };
 
         for(int i = buffer_size - 1; i >= 0; --i)
         {
-            buffer[i] = src % (0x1 << 8);
-            src >>= 8;
+            buffer[i] = src % (0x1 << byte_size);
+            src >>= byte_size;
         }
 
         SizeType last_pos = buffer_size - 1;

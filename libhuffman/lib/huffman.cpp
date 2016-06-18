@@ -224,8 +224,9 @@ Huffman
 
     fin.clear();
     fin.seekg(0, fin.end);
+
     uint32_t fin_size = uint32_t(fin.tellg());
-    WriteToFile<SizeType>(fout, SizeType(fin.tellg()));
+    WriteToFile<uint32_t>(fout, SizeType(fin.tellg()));
 
     for(auto run : runs_)
     {
@@ -351,7 +352,23 @@ ReadHeader(FileStreamInType & fin)
 
     uint32_t fin_size;
     ReadFromFile<uint32_t>(fin, fin_size);
-    printf("%d %d\n", run_size, fin_size);
+
+    runs_.clear();
+
+    for(int i = 0; i < run_size; ++i)
+    {
+        ByteType symbol;
+        ReadFromFile<ByteType>(fin, symbol);
+
+        SizeType run_len;
+        ReadFromFile<SizeType>(fin, run_len);
+
+        SizeType freq;
+        ReadFromFile<SizeType>(fin, freq);
+
+        Run temp = Run(symbol, run_len, freq);
+        runs_.push_back(temp);
+    }
 }
 
 void
