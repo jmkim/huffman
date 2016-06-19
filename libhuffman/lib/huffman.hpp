@@ -217,8 +217,8 @@ private:
     SizeType ReadHeader(StreamInType &);
 
 public:
-    void CompressFile(StreamInType &, const StringType &, const StringType &);
-    void DecompressFile(StreamInType &, const StringType &, const StringType &);
+    void CompressFile(StreamInType &, StreamOutType &);
+    void DecompressFile(StreamInType &, StreamOutType &);
     void PrintAllRuns(FILE * = stdout);
 
     inline

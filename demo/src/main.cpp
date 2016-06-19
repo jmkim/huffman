@@ -1,4 +1,6 @@
 #include "huffman.hpp"
+#include "rle.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -22,19 +24,47 @@ main(const int argc, const char * argv[])
         return E_ARGUMENT_NOT_PROVIDED;
     }
 
-    std::string fin_path = argv[1];
+    const   std::string fin_cmp_path    = argv[1],
+                        fout_cmp_path   = fin_cmp_path + ".z",
+                        fout_dec_path   = fout_cmp_path + ".dec";
 
-    std::ifstream fin(fin_path, std::ios::binary);
-    if(! fin.is_open())
+    RLE rle;
+#if 0
+    Huffman huffman;
+#endif
+
     {
-        fprintf(stderr, "Error: File '%s' not found.\n", fin_path.c_str());
-        return E_FILE_NOT_FOUND;
+        std::ifstream fin(fin_cmp_path, std::ios::binary);
+        if(! fin.is_open())
+        {
+            fprintf(stderr, "Error: File '%s' not found.\n", fin_cmp_path.c_str());
+            return E_FILE_NOT_FOUND;
+        }
+
+        std::ofstream fout(fout_cmp_path, std::ios::binary);
+
+#if 0
+        rle.Encode(fin, fout);
+#endif
+        Huffman huffman;
+        huffman.CompressFile(fin, fout);
+
+        fin.close();
+        fout.close();
     }
 
-    Huffman huffman;
-    huffman.CompressFile(fin, fin_path, std::string(fin_path + ".z"));
+    {
+        std::ifstream fin(fout_cmp_path, std::ios::binary);
+        std::ofstream fout(fout_dec_path, std::ios::binary);
+#if 0
+        rle.Decode(fin, fout);
+#endif
+        Huffman huffman;
+        huffman.DecompressFile(fin, fout);
 
-    fin.close();
+        fin.close();
+        fout.close();
+    }
 
     return E_SUCCESS;
 }

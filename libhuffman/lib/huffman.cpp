@@ -16,10 +16,8 @@ using namespace algorithm;
 
 void
 Huffman
-::CompressFile(StreamInType & fin, const StringType & fin_path, const StringType & fout_path)
+::CompressFile(StreamInType & fin, StreamOutType & fout)
 {
-    StreamOutType fout(fout_path, std::ios::binary);
-
     CollectRuns(fin);
 
     PrintAllRuns();
@@ -32,20 +30,12 @@ Huffman
     CreateRunList(root_);
 
     WriteEncode(fin, fout);
-
-    fout.close();
-
-    StreamInType fout_in(fout_path, std::ios::binary);
-    ReadHeader(fout_in);
-    fout_in.close();
 }
 
 void
 Huffman
-::DecompressFile(StreamInType & fin, const StringType & fin_path, const StringType & fout_path)
+::DecompressFile(StreamInType & fin, StreamOutType & fout)
 {
-    StreamOutType fout(fout_path, std::ios::binary);
-
     ReadHeader(fin);
 
     CreateHuffmanTree();
@@ -53,8 +43,6 @@ Huffman
     CreateRunList(root_);
 
     WriteDecode(fin, fout);
-
-    fout.close();
 }
 
 void
