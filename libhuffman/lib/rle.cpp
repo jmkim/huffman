@@ -46,9 +46,6 @@ void
 RLE
 ::Decode(StreamInType & fin, StreamOutType & fout)
 {
-    fin.clear();
-    fin.seekg(0, fin.beg);
-
     while(! fin.eof())
     {
         SymbolType  symbol;
