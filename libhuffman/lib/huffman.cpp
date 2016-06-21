@@ -27,8 +27,10 @@ Huffman
 
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
-    CreateRunList(root_);
 
+    PrintHuffmanTree();
+
+    CreateRunList(root_);
     WriteEncode(fin, fout);
 }
 
@@ -42,7 +44,7 @@ Huffman
 
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
-    CreateRunList(root_);
+
     PrintHuffmanTree();
 
     WriteDecode(fin, fout);
@@ -311,7 +313,7 @@ void
 Huffman::
 WriteDecode(StreamInType & fin, StreamOutType & fout)
 {
-    const   SizeType            bufstat_max     = sizeof(CodewordType);
+    const   SizeType            bufstat_max     = buffer_size;
             SizeType            bufstat_free    = bufstat_max;
             CodewordType        buffer          = 0;
             Run *               run             = root_;
@@ -319,7 +321,6 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
     fout.clear();
     fout.seekp(0, fin.beg);
 
-READ_MORE:
     BinaryStream::Read<CodewordType>(fin, buffer);
     bufstat_free = bufstat_max - sizeof buffer;
 
@@ -328,7 +329,10 @@ READ_MORE:
         while(run != nullptr && run->codeword_len == 0)
         {
             if(bufstat_free == bufstat_max)
-                goto READ_MORE;
+            {
+                BinaryStream::Read<CodewordType>(fin, buffer);
+                bufstat_free = bufstat_max - sizeof buffer;
+            }
 
             if(buffer % 2 == zerobit)
                 run = run->left;
