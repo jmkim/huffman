@@ -212,7 +212,7 @@ private:
     SizeType GetCodeword(CodewordType &, const ByteType &, const SizeType &);
     void WriteHeader(StreamInType &, StreamOutType &);
     void WriteEncode(StreamInType &, StreamOutType &);
-    void WriteDecode(StreamInType &, StreamOutType &);
+    void WriteDecode(StreamInType &, StreamOutType &, const SizeType &);
     void PrintHuffmanTree(FILE *, const RunType *, const SizeType &);
     SizeType ReadHeader(StreamInType &);
 

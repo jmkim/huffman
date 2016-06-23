@@ -38,7 +38,7 @@ void
 Huffman
 ::DecompressFile(StreamInType & fin, StreamOutType & fout)
 {
-    ReadHeader(fin);
+    SizeType fout_size = ReadHeader(fin);
 
     PrintAllRuns();
 
@@ -47,7 +47,7 @@ Huffman
 
     PrintHuffmanTree();
 
-    WriteDecode(fin, fout);
+    WriteDecode(fin, fout, fout_size);
 }
 
 void
@@ -297,8 +297,8 @@ ReadHeader(StreamInType & fin)
     uint16_t run_size;
     BinaryStream::Read<uint16_t>(fin, run_size);
 
-    uint32_t fin_size;
-    BinaryStream::Read<uint32_t>(fin, fin_size);
+    uint32_t fout_size;
+    BinaryStream::Read<uint32_t>(fin, fout_size);
 
     runs_.clear();
 
@@ -316,11 +316,13 @@ ReadHeader(StreamInType & fin)
         Run temp = Run(symbol, run_len, freq);
         runs_.push_back(temp);
     }
+
+    return SizeType(fout_size);
 }
 
 void
 Huffman::
-WriteDecode(StreamInType & fin, StreamOutType & fout)
+WriteDecode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size)
 {
     const   SizeType            bufstat_max     = buffer_size;
             SizeType            bufstat_free    = bufstat_max;
@@ -348,10 +350,18 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
             if(run->codeword_len > 0)
             {
                 for(int i = 0; i < run->run_len; ++i)
+                {
                     BinaryStream::Write<ByteType>(fout, run->symbol);
+
+                    if(fout.tellp() >= fout_size)
+                        goto RETURN;
+                }
 
                 run = root_;
             }
         }
     }
+
+RETURN:
+    return;
 }
