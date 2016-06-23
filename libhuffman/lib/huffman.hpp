@@ -213,18 +213,11 @@ private:
     void WriteHeader(StreamInType &, StreamOutType &);
     void WriteEncode(StreamInType &, StreamOutType &);
     void WriteDecode(StreamInType &, StreamOutType &, const SizeType &);
-    void PrintHuffmanTree(FILE *, const RunType *, const SizeType &);
     SizeType ReadHeader(StreamInType &);
 
 public:
     void CompressFile(StreamInType &, StreamOutType &);
     void DecompressFile(StreamInType &, StreamOutType &);
-    void PrintAllRuns(FILE * = stdout);
-
-    inline
-    void
-    PrintHuffmanTree(FILE * fout = stdout)
-    { PrintHuffmanTree(fout, root_, 0); }
 };
 
 } /** ns: algorithm */

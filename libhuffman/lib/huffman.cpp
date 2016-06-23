@@ -20,15 +20,11 @@ Huffman
 {
     CollectRuns(fin);
 
-    PrintAllRuns();
-
     fin.clear();            /** Remove eofbit */
     WriteHeader(fin, fout);
 
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
-
-    PrintHuffmanTree();
 
     CreateRunList(root_);
     WriteEncode(fin, fout);
@@ -40,24 +36,10 @@ Huffman
 {
     SizeType fout_size = ReadHeader(fin);
 
-    PrintAllRuns();
-
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
 
-    PrintHuffmanTree();
-
     WriteDecode(fin, fout, fout_size);
-}
-
-void
-Huffman
-::PrintAllRuns(FILE * f)
-{
-    fprintf(f, "SYM LENG FREQ\n");  /** Header of data */
-
-    for(auto run : runs_)
-        fprintf(f, " %02x %4lu %lu\n", run.symbol, run.run_len, run.freq);
 }
 
 void
@@ -147,7 +129,6 @@ Huffman
 {
     if(node->left == nullptr && node->right == nullptr)
     {
-        //printf("[%4d] %02x:%d:%d:%d %x\n", ++count, node->symbol, node->run_len, node->freq, node->codeword_len, node->codeword);
         if(list_.at(node->symbol) == nullptr)
             list_.at(node->symbol) = node;
         else
@@ -261,28 +242,6 @@ Huffman
     }
 }
 
-void
-Huffman
-::PrintHuffmanTree(FILE * f, const RunType * node, const SizeType & depth)
-{
-    for(int i = 0; i < depth; ++i)
-        fprintf(f, "  ");
-    if(node == nullptr)
-        fprintf(f, "null\n");
-    else
-    {
-        fprintf(f, "%02x:%lu:%lu:%lu %x\n"
-                    , node->symbol
-                    , node->run_len
-                    , node->freq
-                    , node->codeword_len
-                    , node->codeword);
-
-        PrintHuffmanTree(f, node->left,  depth + 1);
-        PrintHuffmanTree(f, node->right, depth + 1);
-    }
-}
-
 Huffman::
 SizeType
 Huffman::
@@ -339,26 +298,10 @@ WriteDecode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size
 
         while(bufstat_free < bufstat_max)
         {
-            BinaryStream::Print<CodewordType>(std::cout, buffer, size_t(buffer_size));
-            std::cout << "\n";
-
             if(buffer / (0x1 << (buffer_size - 1)) == zerobit)
-            {
-                std::cout << "[0] ";
                 run = run->left;
-            }
             else
-            {
-                std::cout << "[1] ";
                 run = run->right;
-            }
-
-            fprintf(stdout, "%02x:%lu:%lu:%lu %x\n\n"
-                    , run->symbol
-                    , run->run_len
-                    , run->freq
-                    , run->codeword_len
-                    , run->codeword);
 
             buffer <<= 0x1;
             ++bufstat_free;
