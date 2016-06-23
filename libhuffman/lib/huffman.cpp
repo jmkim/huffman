@@ -339,10 +339,26 @@ WriteDecode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size
 
         while(bufstat_free < bufstat_max)
         {
+            BinaryStream::Print<CodewordType>(std::cout, buffer, size_t(buffer_size));
+            std::cout << "\n";
+
             if(buffer / (0x1 << (buffer_size - 1)) == zerobit)
+            {
+                std::cout << "[0] ";
                 run = run->left;
+            }
             else
+            {
+                std::cout << "[1] ";
                 run = run->right;
+            }
+
+            fprintf(stdout, "%02x:%lu:%lu:%lu %x\n\n"
+                    , run->symbol
+                    , run->run_len
+                    , run->freq
+                    , run->codeword_len
+                    , run->codeword);
 
             buffer <<= 0x1;
             ++bufstat_free;
