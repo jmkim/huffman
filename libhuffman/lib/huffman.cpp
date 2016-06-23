@@ -321,19 +321,13 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
     fout.clear();
     fout.seekp(0, fin.beg);
 
-    BinaryStream::Read<CodewordType>(fin, buffer);
-    bufstat_free = bufstat_max - sizeof buffer;
-
     while(! fin.eof())
     {
-        while(run != nullptr && run->codeword_len == 0)
-        {
-            if(bufstat_free == bufstat_max)
-            {
-                BinaryStream::Read<CodewordType>(fin, buffer);
-                bufstat_free = bufstat_max - sizeof buffer;
-            }
+        BinaryStream::Read<CodewordType>(fin, buffer);
+        bufstat_free = bufstat_max - sizeof buffer;
 
+        while(bufstat_free < bufstat_max)
+        {
             if(buffer % 2 == zerobit)
                 run = run->left;
             else
@@ -341,13 +335,14 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
 
             buffer >>= 0x1;
             ++bufstat_free;
+
+            if(run->codeword_len > 0)
+            {
+                for(int i = 0; i < run->run_len; ++i)
+                    BinaryStream::Write<ByteType>(fout, run->symbol);
+
+                run = root_;
+            }
         }
-
-        fprintf(stdout, " %02x %4lu %lu\n", run->symbol, run->run_len, run->freq);
-
-        for(int i = 0; i < run->run_len; ++i)
-            BinaryStream::Write<ByteType>(fout, run->symbol);
-
-        run = root_;
     }
 }
