@@ -250,6 +250,15 @@ Huffman
         buffer += codeword;
         bufstat_free -= codeword_len;
     }
+
+    if(bufstat_free != bufstat_max)
+    {
+        buffer <<= bufstat_free;
+        BinaryStream::Write<CodewordType>(fout, buffer, true);
+
+        buffer = 0;
+        bufstat_free -= bufstat_max;
+    }
 }
 
 void
