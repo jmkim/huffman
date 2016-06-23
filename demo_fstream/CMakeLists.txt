@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.4)
 
 project(demo_fstream/libhuffman C CXX)
-message(STATUS "Entering into ${PROJECT_SOURCE_DIR} ..")
 
 # We need C++ 11
 if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.1)
