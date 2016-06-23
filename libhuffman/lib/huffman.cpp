@@ -324,7 +324,7 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
     while(! fin.eof())
     {
         BinaryStream::Read<CodewordType>(fin, buffer);
-        bufstat_free = bufstat_max - sizeof buffer;
+        bufstat_free = 0;
 
         while(bufstat_free < bufstat_max)
         {
