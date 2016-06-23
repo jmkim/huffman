@@ -328,12 +328,12 @@ WriteDecode(StreamInType & fin, StreamOutType & fout)
 
         while(bufstat_free < bufstat_max)
         {
-            if(buffer % 2 == zerobit)
+            if(buffer / (0x1 << (buffer_size - 1)) == zerobit)
                 run = run->left;
             else
                 run = run->right;
 
-            buffer >>= 0x1;
+            buffer <<= 0x1;
             ++bufstat_free;
 
             if(run->codeword_len > 0)
