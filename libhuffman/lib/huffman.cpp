@@ -49,36 +49,59 @@ Huffman
     typedef     std::map<MetaSymbolType, unsigned int>  CacheType;
     typedef     CacheType::iterator                     CacheIterType;
 
-    CacheType   cache;              /**< Caching a position of the run in the vector(runs_) */
-
-    fin.clear();                    /** Reset the input position indicator */
+    /** Reset the input position indicator */
+    fin.clear();
     fin.seekg(0, fin.beg);
 
-    while(! fin.eof())
+    if(! fin.eof())
     {
-        ByteType    symbol;
-        SizeType    run_len = 1;
+        CacheType   cache;          /**< Caching a position of the run in the vector(runs_) */
+        ByteType    symbol,
+                    next_symbol;
+        SizeType    run_len         = 1;
 
         BinaryStream::Read<ByteType>(fin, symbol);
-        if(fin.eof())
-            break;
 
-        //BinaryStream::Read<SizeType>(fin, run_len);
+        while(! fin.eof())
+        {
+            BinaryStream::Read<ByteType>(fin, next_symbol);
 
-        /** Insert the pair into runs_;
-            key:    pair(symbol, run_len)
-            value:  appearance frequency of key
-        */
+            if(symbol == next_symbol)
+                ++run_len;
+            else
+            {
+                /** Insert the pair into runs_;
+                    key:    pair(symbol, run_len)
+                    value:  appearance frequency of key
+                */
+                MetaSymbolType  meta_symbol = std::make_pair(symbol, run_len);
+                CacheIterType   cache_iter  = cache.find(meta_symbol);  /** Get the position from cache */
+
+                if(cache_iter == cache.end())
+                {
+                    runs_.push_back(RunType(meta_symbol, 1));           /** First appreance; freq is 1 */
+                    cache.emplace(meta_symbol, runs_.size() - 1);       /** Cache the position */
+                }
+                else
+                    ++runs_.at(cache_iter->second);                     /** Add freq */
+
+                run_len = 1;
+            }
+
+            symbol = next_symbol;
+        }
+
+        /** Process the remaining symbol */
         MetaSymbolType  meta_symbol = std::make_pair(symbol, run_len);
-        CacheIterType   cache_iter  = cache.find(meta_symbol);  /** Get the position from cache */
+        CacheIterType   cache_iter  = cache.find(meta_symbol);
 
         if(cache_iter == cache.end())
         {
-            runs_.push_back(RunType(meta_symbol, 1));           /** First appreance; freq is 1 */
-            cache.emplace(meta_symbol, runs_.size() - 1);       /** Cache the position */
+            runs_.push_back(RunType(meta_symbol, 1));
+            cache.emplace(meta_symbol, runs_.size() - 1);
         }
         else
-            ++runs_.at(cache_iter->second);                     /** Add freq */
+            ++runs_.at(cache_iter->second);
     }
 }
 
@@ -189,56 +212,66 @@ void
 Huffman
 ::WriteEncode(StreamInType & fin, StreamOutType & fout)
 {
-    const   SizeType            bufstat_max     = buffer_size;
-            SizeType            bufstat_free    = bufstat_max;
-            CodewordType        buffer          = 0;
-
     /** Reset the input position indicator */
     fin.clear();
     fin.seekg(0, fin.beg);
 
-    while(! fin.eof())
+    if(! fin.eof())
     {
-        ByteType    symbol;
-        SizeType    run_len = 1;
+        const   SizeType        bufstat_max     = buffer_size;
+                SizeType        bufstat_free    = bufstat_max;
+                CodewordType    buffer          = 0;
+
+                ByteType        symbol,
+                                next_symbol;
+                SizeType        run_len         = 1;
 
         BinaryStream::Read<ByteType>(fin, symbol);
-        if(fin.eof())
-            break;
 
-        /** Write the codeword to fout */
-
-        CodewordType    codeword;
-        SizeType        codeword_len = GetCodeword(codeword, symbol, run_len);
-
-        if(codeword_len == 0)
-            return; /* TODO: Exception(Codeword not found)  */
-
-        while(codeword_len >= bufstat_free)
+        while(! fin.eof())
         {
-            buffer <<= bufstat_free;
-            buffer += (codeword >> (codeword_len - bufstat_free));
-            codeword = codeword % (0x1 << codeword_len - bufstat_free);
-            codeword_len -= bufstat_free;
+            BinaryStream::Read<ByteType>(fin, next_symbol);
 
-            BinaryStream::Write<CodewordType>(fout, buffer, false);
+            if(symbol == next_symbol)
+                ++run_len;
+            else
+            {
+                /** Write the codeword to fout */
 
-            buffer = 0;
-            bufstat_free = bufstat_max;
+                CodewordType    codeword;
+                SizeType        codeword_len = GetCodeword(codeword, symbol, run_len);
+
+                if(codeword_len == 0)
+                    return; /* TODO: Exception(Codeword not found)  */
+
+                while(codeword_len >= bufstat_free)
+                {
+                    buffer <<= bufstat_free;
+                    buffer += (codeword >> (codeword_len - bufstat_free));
+                    codeword = codeword % (0x1 << codeword_len - bufstat_free);
+                    codeword_len -= bufstat_free;
+
+                    BinaryStream::Write<CodewordType>(fout, buffer, false);
+
+                    buffer = 0;
+                    bufstat_free = bufstat_max;
+                }
+
+                buffer <<= codeword_len;
+                buffer += codeword;
+                bufstat_free -= codeword_len;
+                run_len = 1;
+            }
+
+            symbol = next_symbol;
         }
 
-        buffer <<= codeword_len;
-        buffer += codeword;
-        bufstat_free -= codeword_len;
-    }
-
-    if(bufstat_free != bufstat_max)
-    {
-        buffer <<= bufstat_free;
-        BinaryStream::Write<CodewordType>(fout, buffer, true);
-
-        buffer = 0;
-        bufstat_free -= bufstat_max;
+        /** Process the remaining symbol */
+        if(bufstat_free != bufstat_max)
+        {
+            buffer <<= bufstat_free;
+            BinaryStream::Write<CodewordType>(fout, buffer, true);
+        }
     }
 }
 

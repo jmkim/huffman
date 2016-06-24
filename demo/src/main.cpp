@@ -1,5 +1,4 @@
 #include "huffman.hpp"
-#include "rle.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -28,11 +27,6 @@ main(const int argc, const char * argv[])
                         fout_cmp_path   = fin_cmp_path + ".z",
                         fout_dec_path   = fout_cmp_path + ".dec";
 
-    RLE rle;
-#if 0
-    Huffman huffman;
-#endif
-
     {
         std::ifstream fin(fin_cmp_path, std::ios::binary);
         if(! fin.is_open())
@@ -43,9 +37,6 @@ main(const int argc, const char * argv[])
 
         std::ofstream fout(fout_cmp_path, std::ios::binary);
 
-#if 0
-        rle.Encode(fin, fout);
-#endif
         Huffman huffman;
         huffman.CompressFile(fin, fout);
 
@@ -56,9 +47,7 @@ main(const int argc, const char * argv[])
     {
         std::ifstream fin(fout_cmp_path, std::ios::binary);
         std::ofstream fout(fout_dec_path, std::ios::binary);
-#if 0
-        rle.Decode(fin, fout);
-#endif
+
         Huffman huffman;
         huffman.DecompressFile(fin, fout);
 
