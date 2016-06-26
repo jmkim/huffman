@@ -19,8 +19,8 @@ class Huffman
 public:
     typedef size_t          SizeType;
 
-    typedef std::ifstream   StreamInType;
-    typedef std::ofstream   StreamOutType;
+    typedef std::istream    StreamInType;
+    typedef std::ostream    StreamOutType;
 
     typedef std::string     StringType;
 
