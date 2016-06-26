@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.4)
 
-project(demo/libhuffman C CXX)
+project(huffcomp C CXX)
 
 # We need C++ 11
 if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.1)
@@ -17,7 +17,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build/lib)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Add the executable that is built from the source files
-add_executable(demo ${PROJECT_SOURCE_DIR}/src/main.cpp)
+add_executable(huffcomp ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
 # Link the executable to the library
-target_link_libraries(demo LINK_PUBLIC huffman)
+target_link_libraries(huffcomp LINK_PUBLIC huffman)
