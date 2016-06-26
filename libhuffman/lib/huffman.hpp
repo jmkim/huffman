@@ -189,7 +189,7 @@ public:
         { return ! operator<(rhs); }
     };
 
-    typedef Run     RunType;
+    typedef Run                     RunType;
 
     typedef std::vector<RunType>    RunArrayType;
     typedef RunType *               HuffmanTreeType;
@@ -204,17 +204,17 @@ private:
     /** Member functions */
     void CollectRuns(StreamInType &);
     void CreateHuffmanTree(void);
-    void AssignCodeword(RunType *, const CodewordType & = 0, const SizeType & = 0);
     void CreateRunList(RunType *);
+    void AssignCodeword(RunType *, const CodewordType & = 0, const SizeType & = 0);
     SizeType GetCodeword(CodewordType &, const ByteType &, const SizeType &);
+    void Encode(StreamInType &, StreamOutType &);
+    void Decode(StreamInType &, StreamOutType &, const SizeType &);
     void WriteHeader(StreamInType &, StreamOutType &);
-    void WriteEncode(StreamInType &, StreamOutType &);
-    void WriteDecode(StreamInType &, StreamOutType &, const SizeType &);
     SizeType ReadHeader(StreamInType &);
 
 public:
-    void CompressFile(StreamInType &, StreamOutType &);
-    void DecompressFile(StreamInType &, StreamOutType &);
+    void Compress(StreamInType &, StreamOutType &);
+    void Decompress(StreamInType &, StreamOutType &);
 };
 
 } /** ns: algorithm */

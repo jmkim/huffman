@@ -10,7 +10,7 @@ using namespace algorithm;
 
 void
 Huffman
-::CompressFile(StreamInType & fin, StreamOutType & fout)
+::Compress(StreamInType & fin, StreamOutType & fout)
 {
     CollectRuns(fin);
 
@@ -21,19 +21,19 @@ Huffman
     AssignCodeword(root_, 0, 0);
 
     CreateRunList(root_);
-    WriteEncode(fin, fout);
+    Encode(fin, fout);
 }
 
 void
 Huffman
-::DecompressFile(StreamInType & fin, StreamOutType & fout)
+::Decompress(StreamInType & fin, StreamOutType & fout)
 {
     SizeType fout_size = ReadHeader(fin);
 
     CreateHuffmanTree();
     AssignCodeword(root_, 0, 0);
 
-    WriteDecode(fin, fout, fout_size);
+    Decode(fin, fout, fout_size);
 }
 
 void
@@ -126,22 +126,6 @@ Huffman
 
 void
 Huffman
-::AssignCodeword(RunType * node, const CodewordType & codeword, const SizeType & codeword_len)
-{
-    if(node->left == nullptr && node->right == nullptr)
-    {
-        node->codeword      = codeword;
-        node->codeword_len  = codeword_len;
-    }
-    else
-    {
-        AssignCodeword(node->left,  (codeword << 1) + 0, codeword_len + 1);
-        AssignCodeword(node->right, (codeword << 1) + 1, codeword_len + 1);
-    }
-}
-
-void
-Huffman
 ::CreateRunList(RunType * node)
 {
     if(node->left == nullptr && node->right == nullptr)
@@ -161,6 +145,22 @@ Huffman
 
         if(node->right != nullptr)
             CreateRunList(node->right);
+    }
+}
+
+void
+Huffman
+::AssignCodeword(RunType * node, const CodewordType & codeword, const SizeType & codeword_len)
+{
+    if(node->left == nullptr && node->right == nullptr)
+    {
+        node->codeword      = codeword;
+        node->codeword_len  = codeword_len;
+    }
+    else
+    {
+        AssignCodeword(node->left,  (codeword << 1) + 0, codeword_len + 1);
+        AssignCodeword(node->right, (codeword << 1) + 1, codeword_len + 1);
     }
 }
 
@@ -202,73 +202,6 @@ Huffman
     }
 }
 
-void
-Huffman
-::WriteEncode(StreamInType & fin, StreamOutType & fout)
-{
-    /** Reset the input position indicator */
-    fin.clear();
-    fin.seekg(0, fin.beg);
-
-    if(! fin.eof())
-    {
-        const   SizeType        bufstat_max     = buffer_size;
-                SizeType        bufstat_free    = bufstat_max;
-                CodewordType    buffer          = 0;
-
-                ByteType        symbol,
-                                next_symbol;
-                SizeType        run_len         = 1;
-
-        BinaryStream::Read<ByteType>(fin, symbol);
-
-        while(! fin.eof())
-        {
-            BinaryStream::Read<ByteType>(fin, next_symbol);
-
-            if(symbol == next_symbol)
-                ++run_len;
-            else
-            {
-                /** Write the codeword to fout */
-
-                CodewordType    codeword;
-                SizeType        codeword_len = GetCodeword(codeword, symbol, run_len);
-
-                if(codeword_len == 0)
-                    return; /* TODO: Exception(Codeword not found)  */
-
-                while(codeword_len >= bufstat_free)
-                {
-                    buffer <<= bufstat_free;
-                    buffer += (codeword >> (codeword_len - bufstat_free));
-                    codeword = codeword % (0x1 << codeword_len - bufstat_free);
-                    codeword_len -= bufstat_free;
-
-                    BinaryStream::Write<CodewordType>(fout, buffer, false);
-
-                    buffer = 0;
-                    bufstat_free = bufstat_max;
-                }
-
-                buffer <<= codeword_len;
-                buffer += codeword;
-                bufstat_free -= codeword_len;
-                run_len = 1;
-            }
-
-            symbol = next_symbol;
-        }
-
-        /** Process the remaining symbol */
-        if(bufstat_free != bufstat_max)
-        {
-            buffer <<= bufstat_free;
-            BinaryStream::Write<CodewordType>(fout, buffer, true);
-        }
-    }
-}
-
 Huffman::
 SizeType
 Huffman::
@@ -307,8 +240,75 @@ ReadHeader(StreamInType & fin)
 }
 
 void
+Huffman
+::Encode(StreamInType & fin, StreamOutType & fout)
+{
+    /** Reset the input position indicator */
+    fin.clear();
+    fin.seekg(0, fin.beg);
+
+    if(! fin.eof())
+    {
+        const   SizeType        bufstat_max     = buffer_size;
+                SizeType        bufstat_free    = bufstat_max;
+                CodewordType    buffer          = 0;
+
+                ByteType        symbol,
+                                next_symbol;
+                SizeType        run_len         = 1;
+
+        BinaryStream::Read<ByteType>(fin, symbol);
+
+        while(! fin.eof())
+        {
+            BinaryStream::Read<ByteType>(fin, next_symbol);
+
+            if(symbol == next_symbol)
+                ++run_len;
+            else
+            {
+                /** Write the codeword to fout */
+
+                CodewordType    codeword;
+                SizeType        codeword_len = GetCodeword(codeword, symbol, run_len);
+
+                if(codeword_len == 0)
+                    return; /* TODO: Exception (Codeword not found) */
+
+                while(codeword_len >= bufstat_free)
+                {
+                    buffer <<= bufstat_free;
+                    buffer += (codeword >> (codeword_len - bufstat_free));
+                    codeword = codeword % (0x1 << codeword_len - bufstat_free);
+                    codeword_len -= bufstat_free;
+
+                    BinaryStream::Write<CodewordType>(fout, buffer, false);
+
+                    buffer = 0;
+                    bufstat_free = bufstat_max;
+                }
+
+                buffer <<= codeword_len;
+                buffer += codeword;
+                bufstat_free -= codeword_len;
+                run_len = 1;
+            }
+
+            symbol = next_symbol;
+        }
+
+        /** Process the remaining symbol */
+        if(bufstat_free != bufstat_max)
+        {
+            buffer <<= bufstat_free;
+            BinaryStream::Write<CodewordType>(fout, buffer, true);
+        }
+    }
+}
+
+void
 Huffman::
-WriteDecode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size)
+Decode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size)
 {
     const   SizeType            bufstat_max     = buffer_size;
             SizeType            bufstat_free    = bufstat_max;
@@ -340,14 +340,11 @@ WriteDecode(StreamInType & fin, StreamOutType & fout, const SizeType & fout_size
                     BinaryStream::Write<ByteType>(fout, run->symbol);
 
                     if(fout.tellp() >= fout_size)
-                        goto RETURN;
+                        return;
                 }
 
                 run = root_;
             }
         }
     }
-
-RETURN:
-    return;
 }
