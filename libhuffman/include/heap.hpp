@@ -2,7 +2,6 @@
 #define ALGORITHM_HEAP_H_ 1
 
 #include <functional>
-#include <utility>
 #include <vector>
 
 namespace algorithm

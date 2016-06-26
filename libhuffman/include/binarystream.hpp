@@ -1,7 +1,6 @@
 #ifndef ALGORITHM_BINARYSTREAM_H_
 
 #include <istream>
-#include <ostream>
 
 namespace algorithm
 {

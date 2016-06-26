@@ -1,12 +1,9 @@
 #ifndef ALGORITHM_HUFFMAN_H_
 #define ALGORITHM_HUFFMAN_H_ 1
 
-#include <fstream>
 #include <vector>
 #include <array>
 #include <limits>
-#include <string>
-#include <cstring>
 
 namespace algorithm
 {

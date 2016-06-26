@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 
 using namespace algorithm;
 
@@ -19,7 +18,7 @@ main(const int argc, const char * argv[])
 {
     if(argc < 2)
     {
-        fprintf(stderr, "Usage: %s [file name]\n", argv[0]);
+        std::cerr << "Usage: " << argv[0] << "[file name]\n";
         return E_ARGUMENT_NOT_PROVIDED;
     }
 
@@ -31,7 +30,7 @@ main(const int argc, const char * argv[])
         std::ifstream fin(fin_cmp_path, std::ios::binary);
         if(! fin.is_open())
         {
-            fprintf(stderr, "Error: File '%s' not found.\n", fin_cmp_path.c_str());
+            std::cerr << "Error: File '" << fin_cmp_path << "' not found.\n";
             return E_FILE_NOT_FOUND;
         }
 

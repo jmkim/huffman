@@ -1,13 +1,7 @@
 #include "huffman.hpp"
 
-#include <iostream>
 #include <fstream>
-#include <vector>
 #include <map>
-#include <utility>
-#include <string>
-#include <cstring>
-#include <limits>
 
 #include "heap.hpp"
 #include "binarystream.hpp"
