@@ -29,7 +29,7 @@ struct Msg
             << "  -h,  --help                      print this help\n"
             << "  -c,  --compress                  compress with huffman coding (this is the default)\n"
             << "  -d,  --decompress                decompress with huffman decoding\n"
-            << "  -o,  --output-file=FILENAME      specify the output path (default if stdout)\n";
+            << "  -o,  --output-file=FILENAME      specify the output path (default is stdout)\n";
     }
 
     static void
